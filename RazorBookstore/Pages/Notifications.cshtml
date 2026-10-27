@@ -1,0 +1,4 @@
+@page
+@model NotificationsModel
+@{ViewData["Title"]="Thông báo";}
+<section class="info-page"><div class="page-heading"><h1>Thông báo</h1><form method="post" asp-page-handler="ReadAll"><button class="btn btn-outline-dark" disabled="@(Model.UnreadCount==0)">Đánh dấu tất cả đã đọc</button></form></div><p>@Model.UnreadCount thông báo chưa đọc.</p><div class="notice-list">@foreach(var n in NotificationsModel.All){<article class="notice-card @(Model.IsRead(n.Id)?"is-read":"")"><span class="notice-dot"></span><div><h2>@n.Title</h2><p>@n.Content</p><a href="@n.Link">Xem thêm →</a></div>@if(!Model.IsRead(n.Id)){<form method="post" asp-page-handler="Read"><input name="id" type="hidden" value="@n.Id" /><button class="btn btn-outline-dark">Đã đọc</button></form>}</article>}</div></section>

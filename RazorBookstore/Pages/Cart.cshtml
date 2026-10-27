@@ -1,0 +1,7 @@
+﻿@page
+@model CartModel
+@{ ViewData["Title"]="Giỏ hàng"; }
+<h1>Giỏ hàng của bạn</h1><p>@Model.Count sản phẩm</p>
+@foreach(var line in Model.Lines){<article class="cart-item"><div class="product-visual @line.Product.ColorClass"><partial name="_ProductPhoto" model="line.Product" /></div><div><h2>@line.Product.Name</h2><p>@line.Product.Price.ToString("N0")đ</p><form method="post" asp-page-handler="Quantity"><input type="hidden" name="id" value="@line.Product.Id" /><label>Số lượng <input type="number" name="quantity" min="0" max="999" value="@line.Quantity" /></label><button>Cập nhật</button></form><form method="post" asp-page-handler="Remove"><input type="hidden" name="id" value="@line.Product.Id" /><button>Xóa</button></form></div><strong>@line.Total.ToString("N0")đ</strong></article>}
+@if(Model.Count==0){<p>Giỏ hàng đang trống.</p><a href="/">Khám phá sách</a>}else{<h2>Tổng cộng: @Model.Total.ToString("N0")đ</h2><form method="post" asp-page-handler="Clear" data-confirm="Xóa toàn bộ giỏ hàng?"><button>Xóa giỏ hàng</button></form><a href="/Checkout" class="primary-button">Thanh toán</a>}
+

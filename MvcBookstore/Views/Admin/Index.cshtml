@@ -1,0 +1,5 @@
+﻿
+@model DashboardModel
+@{ViewData["Title"]="Tổng quan";}
+<section class="admin-page"><h1>Tổng quan cửa hàng</h1><div class="stats-grid"><a class="stat-card" href="/Admin/Products">Sách<strong>@Model.Products</strong></a><a class="stat-card" href="/Admin/Customers">Khách hàng<strong>@Model.Customers</strong></a><a class="stat-card" href="/Admin/Categories">Danh mục<strong>@Model.Categories</strong></a><a class="stat-card" href="/Admin/Orders">Đơn hàng<strong>@Model.Orders</strong></a><div class="stat-card">Doanh thu đơn hoàn thành<strong>@Model.Revenue.ToString("N0")đ</strong></div></div></section>
+

@@ -1,0 +1,6 @@
+﻿
+@model MyOrdersModel
+@{ViewData["Title"]="Đơn hàng của tôi";}
+<section class="content-page"><h1>Đơn hàng của tôi</h1><a href="/MyOrders">Xem tất cả đơn hàng</a>@foreach(var order in Model.Orders){<article class="admin-panel my-4"><h2>Đơn #@order.Id</h2><p>@order.CreatedAt.AddHours(7).ToString("dd/MM/yyyy HH:mm") · @OrderStatuses.All.GetValueOrDefault(order.Status,order.Status)</p><p>Giao đến: @order.Address</p><p>Thanh toán khi nhận hàng (COD)</p><table class="table"><thead><tr><th>Sách</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead><tbody>@foreach(var line in order.Lines){<tr><td>@line.ProductName</td><td>@line.Quantity</td><td>@line.UnitPrice.ToString("N0")đ</td><td>@((line.UnitPrice*line.Quantity).ToString("N0"))đ</td></tr>}</tbody></table><strong>Tổng: @order.Total.ToString("N0")đ</strong></article>}@if(Model.Orders.Count==0){<p>Bạn chưa có đơn hàng phù hợp.</p>}</section>
+
+

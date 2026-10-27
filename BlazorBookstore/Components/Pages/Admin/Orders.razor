@@ -1,0 +1,30 @@
+﻿@attribute [Authorize(Policy=Permissions.Orders)]
+@inject IDbContextFactory<AppDbContext> DbFactory
+@page "/Admin/Orders"
+@inject IJSRuntime JS
+<PageTitle>Quản lý đơn hàng - Mộc Books</PageTitle>
+<section class="admin-page"><p class="eyebrow">MỘC BOOKS / QUẢN TRỊ</p><h1>Quản lý đơn hàng</h1><AdminNav />
+<div class="admin-toolbar"><div class="admin-search"><input class="form-control" @bind="search" @bind:event="oninput" placeholder="Mã đơn, khách hàng, email…" aria-label="Tìm đơn hàng" /><select class="form-select" aria-label="Trạng thái đơn hàng" @bind="status"><option value="">Tất cả trạng thái</option>@foreach (var value in OrderStatuses.All) { <option value="@value.Key">@value.Value</option> }</select></div><a class="btn btn-dark" href="/Admin/OrderEdit">+ Thêm đơn hàng</a></div>
+@if (message is not null) { <div class="alert alert-info" role="status">@message</div> }
+<p class="text-muted">@Items.Count đơn hàng</p><div class="admin-panel table-responsive"><table class="table align-middle"><thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Ngày tạo</th><th>Số lượng</th><th>Tổng tiền</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>@foreach (var order in Items) { <tr><td>#@order.Id</td><td>@order.Customer.Name<br /><small>@order.Customer.Email</small></td><td>@order.CreatedAt.AddHours(7).ToString("dd/MM/yyyy HH:mm")</td><td>@order.Lines.Sum(x => x.Quantity)</td><td>@order.Total.ToString("N0")đ</td><td>@OrderStatuses.All.GetValueOrDefault(order.Status, order.Status)</td><td><div class="admin-actions"><a class="btn btn-sm btn-outline-dark" href="@($"/Admin/OrderEdit?id={order.Id}")">Sửa</a><button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(order.Id)">Xóa</button></div></td></tr> } @if (Items.Count == 0) { <tr><td colspan="7" class="admin-empty">Chưa có đơn hàng phù hợp.</td></tr> }</tbody></table></div></section>
+@code {
+    private string search = "", status = "";
+    private string? message;
+    private IReadOnlyList<Order> Items => ReadOrders().Where(x => (status == "" || x.Status == status) && (string.IsNullOrWhiteSpace(search) || x.Id.ToString() == search.Trim().TrimStart('#') || x.Customer.Name.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) || x.Customer.Email.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase))).ToArray();
+    private async Task Delete(int id)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", "Xóa đơn hàng này và các dòng sách?")) return;
+        try { message = DeleteOrder(id) ? "Đã xóa đơn hàng." : "Không tìm thấy đơn hàng."; }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException) { message = "Không thể xóa đơn hàng. Vui lòng thử lại."; }
+    }
+}
+
+
+@code {
+private IReadOnlyList<Order> ReadOrders(){using var db=DbFactory.CreateDbContext();return db.Orders.AsNoTracking().Include(x=>x.Customer).Include(x=>x.Lines).OrderByDescending(x=>x.Id).ToArray();}
+private bool DeleteOrder(int id){if(!HasPermission(Permissions.Admin)||!HasPermission(Permissions.Orders))return false;using var db=DbFactory.CreateDbContext();var item=db.Orders.Find(id);if(item is null)return false;db.Orders.Remove(item);db.SaveChanges();return true;}
+[CascadingParameter] private Task<AuthenticationState> CurrentAuth {get;set;}=null!;
+private bool HasPermission(string permission){var user=CurrentAuth.GetAwaiter().GetResult().User;var id=user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;if(id is null)return false;using var db=DbFactory.CreateDbContext();return db.Users.Any(x=>x.Id==id&&!x.IsDisabled)&&(from ur in db.UserRoles join rc in db.RoleClaims on ur.RoleId equals rc.RoleId where ur.UserId==id&&rc.ClaimType=="Permission"&&rc.ClaimValue==permission select rc.Id).Any();}
+}
+
+

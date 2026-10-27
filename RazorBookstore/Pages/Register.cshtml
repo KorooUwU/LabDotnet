@@ -1,0 +1,4 @@
+﻿@page
+@model RegisterModel
+@{ViewData["Title"]="Đăng ký khách hàng";}
+<section class="content-page"><h1>Đăng ký khách hàng</h1><form method="post" class="editor-form"><div asp-validation-summary="All" class="text-danger"></div><label asp-for="Input.UserName">Tên đăng nhập</label><input asp-for="Input.UserName" /><label asp-for="Input.FullName">Họ tên</label><input asp-for="Input.FullName" /><label asp-for="Input.Email">Email</label><input asp-for="Input.Email" /><label asp-for="Input.Phone">Điện thoại</label><input asp-for="Input.Phone" /><label asp-for="Input.Password">Mật khẩu (ít nhất 6 ký tự)</label><input asp-for="Input.Password" /><label asp-for="Input.ConfirmPassword">Nhập lại mật khẩu</label><input asp-for="Input.ConfirmPassword" /><button class="primary-button">Đăng ký</button></form><a href="/Login">Đã có tài khoản? Đăng nhập</a></section>

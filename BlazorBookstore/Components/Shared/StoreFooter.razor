@@ -1,0 +1,17 @@
+﻿@inject IDbContextFactory<AppDbContext> DbFactory
+<footer class="store-footer">
+    <div class="footer-intro"><a href="/" class="brand-mark">MỘC<span>.</span></a><p>Một trang sách, một thế giới mới.<br />Đồng hành cùng niềm vui đọc mỗi ngày.</p></div>
+    <div><h2>Thể loại</h2><a href="/">Tất cả sách</a>@foreach (var category in ReadCategories().Select(p=>p.Name)) { <a href="@("/?Category=" + Uri.EscapeDataString(category) + "#products")">@category</a> }</div>
+    <div><h2>Hỗ trợ khách hàng</h2><a href="/Support#shopping">Hướng dẫn mua hàng</a><a href="/Support#shipping">Giao hàng</a><a href="/Support#returns">Đổi trả</a><a href="/Support#questions">Câu hỏi thường gặp</a></div>
+    <div><h2>Liên hệ</h2><a href="/Contact">Thông tin liên hệ</a><a href="/About">Về Mộc Books</a><p>lienhe@example.com<br />0xxx xxx xxx<br /><small>Thông tin liên hệ mẫu</small></p></div>
+    <div class="footer-copyright">© 2026 Mộc Books <span>Sách hay cho mỗi ngày</span></div>
+</footer>
+
+
+
+
+@code {
+private IReadOnlyList<Category> ReadCategories(){using var db=DbFactory.CreateDbContext();return db.Categories.AsNoTracking().ToArray();}
+private IReadOnlyList<Product> ReadProducts(){using var db=DbFactory.CreateDbContext();return db.Products.AsNoTracking().OrderBy(x=>x.Id).ToArray();}
+}
+

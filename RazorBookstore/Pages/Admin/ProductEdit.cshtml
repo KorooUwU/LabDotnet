@@ -1,0 +1,16 @@
+﻿@page
+@model WebApplication1.Pages.Admin.ProductEditModel
+@{ViewData["Title"]="Thông tin sách";}
+<section class="admin-page"><h1>@(Model.Input.Id==0?"Thêm sách":"Sửa sách")</h1><form method="post" enctype="multipart/form-data" class="admin-panel admin-form"><div asp-validation-summary="All" class="text-danger"></div><input asp-for="Input.Id" type="hidden" />
+<div><label asp-for="Input.Name">Tên sách</label><input asp-for="Input.Name" class="form-control" /><span asp-validation-for="Input.Name" class="text-danger"></span></div>
+<div><label asp-for="Input.Author">Tác giả</label><input asp-for="Input.Author" class="form-control" /><span asp-validation-for="Input.Author" class="text-danger"></span></div>
+<div><label asp-for="Input.Publisher">Nhà xuất bản</label><input asp-for="Input.Publisher" class="form-control" /><span asp-validation-for="Input.Publisher" class="text-danger"></span></div>
+<div><label asp-for="Input.PublicationYear">Năm xuất bản</label><input asp-for="Input.PublicationYear" class="form-control" /><span asp-validation-for="Input.PublicationYear" class="text-danger"></span></div>
+<div><label asp-for="Input.Isbn">ISBN (10 hoặc 13 chữ số)</label><input asp-for="Input.Isbn" class="form-control" /><span asp-validation-for="Input.Isbn" class="text-danger"></span></div>
+<div><label asp-for="Input.PageCount">Số trang</label><input asp-for="Input.PageCount" class="form-control" /><span asp-validation-for="Input.PageCount" class="text-danger"></span></div>
+<div><label asp-for="Input.Description">Mô tả</label><textarea asp-for="Input.Description" class="form-control"></textarea><span asp-validation-for="Input.Description" class="text-danger"></span></div>
+<div><label asp-for="Input.CategoryId">Danh mục</label><select asp-for="Input.CategoryId" class="form-select"><option value="0">Chọn danh mục</option>@foreach(var category in Model.Categories){<option value="@category.Id">@category.Name</option>}</select></div>
+<div><label asp-for="Input.Price">Giá bán (đ)</label><input asp-for="Input.Price" class="form-control" /><span asp-validation-for="Input.Price" class="text-danger"></span></div>
+<div><label asp-for="Cover">Ảnh bìa sách</label><input asp-for="Cover" type="file" accept="image/png,image/jpeg,image/webp" class="form-control" /><small>JPG, PNG, WebP, tối đa 2 MB.</small><div class="product-upload-preview"><img id="upload-preview" src="@Model.Preview" alt="Xem trước ảnh bìa" /></div><label><input asp-for="RemoveImage" /> Bỏ ảnh hiện tại</label></div>
+<div><label asp-for="Input.ColorClass">Màu nền</label><select asp-for="Input.ColorClass" class="form-select"><option value="clay">Đất nung</option><option value="amber">Hổ phách</option><option value="sage">Xanh lá</option><option value="terracotta">Cam đất</option></select></div><div class="admin-actions"><button class="btn btn-dark">Lưu sách</button><a class="btn btn-outline-dark" href="/Admin/Products">Hủy</a></div></form></section>
+

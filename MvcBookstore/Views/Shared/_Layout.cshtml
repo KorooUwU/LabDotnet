@@ -1,0 +1,35 @@
+﻿@inject WebApplication1.Data.AppDbContext Db
+@using Microsoft.EntityFrameworkCore
+@{
+    var cart = BrowserCart.Read(Context.Session);
+    var ids = cart.Keys.ToArray();
+    var existing = await Db.Products.Where(x => ids.Contains(x.Id)).Select(x => x.Id).ToListAsync();
+    var count = existing.Sum(id => cart[id]);
+    var categories = await Db.Categories.AsNoTracking().OrderBy(x => x.Name).ToListAsync();
+    var unread = Enumerable.Range(1, 3).Count(id => Context.Session.GetInt32("notice:" + id) != 1);
+    var name = User.FindFirst("FullName")?.Value ?? User.Identity?.Name;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>@ViewData["Title"] - Mộc Books · MVC</title><link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/><link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/></head>
+<body>
+<div class="store-shell store-horizontal">
+    <header class="store-header">
+        <div class="store-header-row">
+            <a class="store-logo" href="/" aria-label="Mộc Books - Trang chủ">MỘC<span>.</span><small>BOOKS</small></a>
+            <details name="store-header-menu" class="header-dropdown category-dropdown"><summary class="category-trigger">Danh mục<span class="dropdown-caret" aria-hidden="true"></span></summary><nav class="header-dropdown-panel" aria-label="Danh mục sách"><a href="/#products">Tất cả sách</a>@foreach(var category in categories){<a href="@("/?Category=" + Uri.EscapeDataString(category.Name) + "#products")">@category.Name</a>}</nav></details>
+            <form action="/" method="get" class="header-search"><label class="visually-hidden" for="header-search">Tìm sách, tác giả hoặc ISBN</label><input id="header-search" name="Search" value="@Context.Request.Query["Search"]" placeholder="Tìm sách, tác giả hoặc ISBN…"/><button type="submit" aria-label="Tìm kiếm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="7.3"/><path d="m16 16 4.5 4.5"/></svg></button></form>
+            <nav class="header-actions" aria-label="Tiện ích tài khoản">
+                <a class="header-action" href="/Notifications"><span class="header-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>@if(unread>0){<span class="header-count">@unread</span>}</span><span>Thông báo</span></a>
+                <a class="header-action" href="/Cart"><span class="header-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h3l2.5 12h11L21 6H6"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg><span class="header-count cart-count" aria-label="Số sản phẩm trong giỏ">@count</span></span><span>Giỏ hàng</span></a>
+                <details name="store-header-menu" class="header-dropdown account-dropdown"><summary class="header-action"><span class="header-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></svg></span><span class="header-account-name">@(User.Identity?.IsAuthenticated == true ? name : "Tài khoản")</span></summary><div class="header-dropdown-panel account-panel"><partial name="_AccountNavbar"/>@if(User.Identity?.IsAuthenticated != true){<a href="/Register">Đăng ký tài khoản</a>}<a href="/MyOrders">Đơn hàng của tôi</a><a href="/Admin">Trang quản trị</a></div></details>
+            </nav>
+        </div>
+        <nav class="store-nav-links" aria-label="Điều hướng cửa hàng"><a href="/">Sách</a><a href="/About">Giới thiệu</a><a href="/MyOrders">Đơn hàng của tôi</a><a href="/Support">Hỗ trợ khách hàng</a><a href="/Contact">Liên hệ</a><a class="header-admin-link" href="/Admin">Quản trị</a></nav>
+    </header>
+    <div class="store-main"><main class="store-body" role="main">@RenderBody()</main><partial name="_StoreFooter"/></div>
+</div>
+<script src="~/js/store-header.js" asp-append-version="true"></script><script src="~/js/razor-site.js" asp-append-version="true"></script>@await RenderSectionAsync("Scripts",false)
+</body></html>
+
+

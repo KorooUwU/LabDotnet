@@ -1,0 +1,52 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject NotificationStore Notifications
+@inject CartStore Basket
+@inject IDbContextFactory<AppDbContext> DbFactory
+@implements IDisposable
+<div class="store-shell store-horizontal">
+    <header class="store-header">
+        <div class="store-header-row">
+            <a class="store-logo" href="/" aria-label="Mộc Books - Trang chủ">MỘC<span>.</span><small>BOOKS</small></a>
+            <details name="store-header-menu" class="header-dropdown category-dropdown">
+                <summary class="category-trigger">Danh mục<span class="dropdown-caret" aria-hidden="true"></span></summary>
+                <nav class="header-dropdown-panel" aria-label="Danh mục sách">
+                    <a href="/#products">Tất cả sách</a>
+                    @foreach (var category in categories) { <a href="@("/?Category=" + Uri.EscapeDataString(category.Name) + "#products")">@category.Name</a> }
+                </nav>
+            </details>
+            <form action="/" method="get" class="header-search">
+                <label class="visually-hidden" for="header-search">Tìm sách, tác giả hoặc ISBN</label>
+                <input id="header-search" name="Search" value="@SearchQuery" placeholder="Tìm sách, tác giả hoặc ISBN…" />
+                <button type="submit" aria-label="Tìm kiếm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="7.3"/><path d="m16 16 4.5 4.5"/></svg></button>
+            </form>
+            <nav class="header-actions" aria-label="Tiện ích tài khoản">
+                <a class="header-action" href="/Notifications"><span class="header-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>@if (Notifications.UnreadCount > 0) { <span class="header-count">@Notifications.UnreadCount</span> }</span><span>Thông báo</span></a>
+                <a class="header-action" href="/Cart"><span class="header-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h3l2.5 12h11L21 6H6"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg><span class="header-count cart-count" aria-label="Số sản phẩm trong giỏ">@Basket.Count</span></span><span>Giỏ hàng</span></a>
+                <details name="store-header-menu" class="header-dropdown account-dropdown">
+                    <summary class="header-action"><span class="header-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></svg></span><span class="header-account-name"><AuthorizeView><Authorized Context="account">@(account.User.FindFirst("FullName")?.Value ?? account.User.Identity?.Name)</Authorized><NotAuthorized>Tài khoản</NotAuthorized></AuthorizeView></span></summary>
+                    <div class="header-dropdown-panel account-panel"><AccountNavbar /><AuthorizeView><NotAuthorized><a href="/Register">Đăng ký tài khoản</a></NotAuthorized></AuthorizeView><a href="/MyOrders">Đơn hàng của tôi</a><a href="/Admin">Trang quản trị</a></div>
+                </details>
+            </nav>
+        </div>
+        <nav class="store-nav-links" aria-label="Điều hướng cửa hàng"><NavLink href="/" Match="NavLinkMatch.All">Sách</NavLink><NavLink href="/About">Giới thiệu</NavLink><NavLink href="/MyOrders">Đơn hàng của tôi</NavLink><NavLink href="/Support">Hỗ trợ khách hàng</NavLink><NavLink href="/Contact">Liên hệ</NavLink><a class="header-admin-link" href="/Admin">Quản trị</a></nav>
+    </header>
+    <div class="store-main"><main class="store-body" role="main">@Body</main><StoreFooter /></div>
+</div>
+<BlazorError />
+@code {
+    private string SearchQuery => Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(Navigation.Uri).Query).TryGetValue("Search", out var value) ? value.ToString() : "";
+    private IReadOnlyList<Category> categories = [];
+    protected override void OnInitialized() {
+        using var db = DbFactory.CreateDbContext();
+        categories = db.Categories.AsNoTracking().OrderBy(x => x.Name).ToArray();
+        Notifications.Changed += Update;
+        Basket.Changed += Update;
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender) { if (firstRender) { await Basket.LoadAsync(); await InvokeAsync(StateHasChanged); } }
+    private void Update() => _ = InvokeAsync(StateHasChanged);
+    public void Dispose() { Notifications.Changed -= Update; Basket.Changed -= Update; }
+}
+
+
+

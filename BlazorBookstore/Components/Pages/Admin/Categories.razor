@@ -1,0 +1,17 @@
+﻿@page "/Admin/Categories"
+@attribute [Authorize(Policy=Permissions.Categories)]
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject AuthenticationStateProvider Auth
+@inject IAuthorizationService Authorization
+<PageTitle>Quản lý danh mục</PageTitle>
+<section class="admin-page"><h1>Quản lý danh mục</h1><AdminNav/>@if(message is not null){<p class="alert alert-info" role="status">@message</p>}<input class="form-control mb-3" @bind="search" @bind:event="oninput" placeholder="Tìm danh mục"/><EditForm Model="input" OnValidSubmit="Save" FormName="Category" class="admin-form admin-panel"><DataAnnotationsValidator/><ValidationSummary/><label>Tên danh mục<InputText @bind-Value="input.Name" class="form-control"/></label><label>Mô tả<InputTextArea @bind-Value="input.Description" class="form-control"/></label><button class="btn btn-dark">Lưu danh mục</button><button type="button" class="btn btn-outline-dark" @onclick="()=>input=new()">Thêm mới / Hủy sửa</button></EditForm><div class="admin-panel mt-4"><table class="table"><thead><tr><th>Tên</th><th>Mô tả</th><th>Thao tác</th></tr></thead><tbody>@foreach(var item in items.Where(x=>x.Name.Contains(search,StringComparison.OrdinalIgnoreCase))){<tr><td>@item.Name</td><td>@item.Description</td><td><button class="btn btn-outline-dark" @onclick="()=>Edit(item)">Sửa</button><button class="btn btn-outline-danger" @onclick="()=>Delete(item.Id)">Xóa</button></td></tr>}</tbody></table></div></section>
+@code{
+ private Category input=new();private List<Category> items=[];private string search="";private string? message;
+ protected override async Task OnInitializedAsync()=>await Load();
+ private async Task Load(){await using var db=await DbFactory.CreateDbContextAsync();items=await db.Categories.AsNoTracking().ToListAsync();}
+ private void Edit(Category x)=>input=new(){Id=x.Id,Name=x.Name,Description=x.Description};
+ private async Task<bool> Allowed()=> (await Authorization.AuthorizeAsync((await Auth.GetAuthenticationStateAsync()).User,Permissions.Admin)).Succeeded && (await Authorization.AuthorizeAsync((await Auth.GetAuthenticationStateAsync()).User,Permissions.Categories)).Succeeded;
+ private async Task Save(){if(!await Allowed()){message="Bạn không có quyền.";return;}await using var db=await DbFactory.CreateDbContextAsync();input.Name=input.Name.Trim();if(await db.Categories.AnyAsync(x=>x.Id!=input.Id&&x.Name==input.Name)){message="Tên danh mục đã tồn tại.";return;}if(input.Id==0)db.Categories.Add(input);else{var old=await db.Categories.FindAsync(input.Id);if(old is null){message="Danh mục không tồn tại.";return;}old.Name=input.Name;old.Description=input.Description;foreach(var p in await db.Products.Where(x=>x.CategoryId==old.Id).ToListAsync())db.Entry(p).Property(x=>x.Category).CurrentValue=old.Name;}await db.SaveChangesAsync();input=new();message="Đã lưu danh mục.";await Load();}
+ private async Task Delete(int id){if(!await Allowed()){message="Bạn không có quyền.";return;}await using var db=await DbFactory.CreateDbContextAsync();if(await db.Products.AnyAsync(x=>x.CategoryId==id)){message="Danh mục đang có sách.";return;}var item=await db.Categories.FindAsync(id);if(item is null)return;db.Categories.Remove(item);await db.SaveChangesAsync();await Load();}
+}
+

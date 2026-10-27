@@ -1,0 +1,59 @@
+﻿@inject IDbContextFactory<AppDbContext> DbFactory
+@page "/"
+@page "/Index"
+@inject CartStore Cart
+@inject NavigationManager Navigation
+<PageTitle>Nhà sách trực tuyến - Mộc Books</PageTitle>
+<section class="shop-hero">
+    <div>
+        <p class="eyebrow">MỘC BOOKS / 2026</p>
+        <h1>Mở một trang sách,<br /><em>chạm một thế giới.</em></h1>
+        <p class="hero-copy">Tìm một cuốn sách đồng hành cùng bạn, từ văn học và thiếu nhi đến công nghệ và phát triển bản thân.</p>
+        <a class="btn btn-dark btn-lg" href="#products">Khám phá sách <span aria-hidden="true">↓</span></a>
+    </div>
+    <div class="hero-note"><span>01</span><p>Giao hàng miễn phí<br />cho đơn từ 500.000đ</p></div>
+</section>
+
+<section class="products-section" id="products">
+    <div class="section-heading">
+        <div><p class="eyebrow">BỘ SƯU TẬP</p><h2>Sách nổi bật</h2></div>
+        <p class="section-description">Những tựa sách dành cho từng sở thích.<br />Danh sách hiện tại là sách mẫu để bạn thay sau.</p>
+    </div>
+    @if (!string.IsNullOrWhiteSpace(Search) || !string.IsNullOrWhiteSpace(Category)) { <div class="search-summary"><p role="status">@FilteredProducts.Count sách @if (!string.IsNullOrWhiteSpace(Search)) { <span>cho “@Search”</span> } @if (!string.IsNullOrWhiteSpace(Category)) { <span>trong @Category</span> }</p><a href="/#products">Xóa bộ lọc</a></div> }
+@if (FilteredProducts.Count == 0) { <div class="admin-empty">Không tìm thấy sách phù hợp. Hãy thử từ khóa khác.</div> }
+<div class="category-filters"><a href="/">Tất cả sách</a>@foreach(var category in ReadCategories()){<a href="@("/?Category="+Uri.EscapeDataString(category.Name))">@category.Name</a>}</div><div class="product-grid">
+        @foreach (var product in FilteredProducts)
+        {
+            <article class="product-card">
+                <div class="product-image @product.ColorClass"><span>@product.Category</span><ProductPhoto Product="product" /></div>
+                <div class="product-info">
+                    <div><h3><a href="@($"/Books/{product.Id}")">@product.Name</a></h3><p class="book-author">@product.Author</p><p>@product.Description</p></div>
+                    <div class="product-footer"><strong>@product.Price.ToString("N0")đ</strong>
+                        <button class="add-button" type="button" @onclick="() => AddToCart(product.Id)" aria-label="Thêm @product.Name vào giỏ">+</button>
+                    </div>
+                </div>
+            </article>
+        }
+    </div>
+</section>
+
+@code {
+    [SupplyParameterFromQuery] public string? Search { get; set; }
+    [SupplyParameterFromQuery] public string? Category { get; set; }
+    private IReadOnlyList<Product> FilteredProducts => ReadProducts().Where(p => (string.IsNullOrWhiteSpace(Search) || p.Name.Contains(Search.Trim(), StringComparison.OrdinalIgnoreCase) || p.Author.Contains(Search.Trim(), StringComparison.OrdinalIgnoreCase) || p.Isbn.Contains(Search.Trim(), StringComparison.OrdinalIgnoreCase) || p.Description.Contains(Search.Trim(), StringComparison.OrdinalIgnoreCase) || p.Category.Contains(Search.Trim(), StringComparison.OrdinalIgnoreCase)) && (string.IsNullOrWhiteSpace(Category) || p.Category.Equals(Category, StringComparison.OrdinalIgnoreCase))).ToArray();
+    private async Task AddToCart(int id)
+    {
+        await Cart.AddAsync(id);
+        Navigation.NavigateTo("/Cart");
+    }
+}
+
+
+
+
+
+@code {
+private IReadOnlyList<Category> ReadCategories(){using var db=DbFactory.CreateDbContext();return db.Categories.AsNoTracking().ToArray();}
+private IReadOnlyList<Product> ReadProducts(){using var db=DbFactory.CreateDbContext();return db.Products.AsNoTracking().OrderBy(x=>x.Id).ToArray();}
+}
+

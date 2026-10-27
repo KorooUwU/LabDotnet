@@ -1,0 +1,55 @@
+﻿@attribute [Authorize(Policy=Permissions.Customers)]
+@inject IDbContextFactory<AppDbContext> DbFactory
+@page "/Admin/CustomerEdit"
+@inject NavigationManager Navigation
+@inject AdminFeedback Feedback
+<PageTitle>Thông tin khách hàng - Mộc Books</PageTitle>
+<section class="admin-page"><p class="eyebrow">MỘC BOOKS / QUẢN TRỊ</p><h1>@(input.Id == 0 ? "Thêm khách hàng" : "Sửa khách hàng")</h1><AdminNav />
+@if (missing) { <p role="alert">Không tìm thấy khách hàng.</p><a href="/Admin/Customers">Quay lại danh sách</a> } else {
+<EditForm Model="input" OnValidSubmit="Save" FormName="CustomerEdit" class="admin-panel admin-form"><DataAnnotationsValidator /><ValidationSummary class="text-danger" /><p class="text-danger" role="alert">@error</p>
+<div><label for="Name" class="form-label">Họ và tên</label><InputText id="Name" @bind-Value="input.Name" class="form-control" /><ValidationMessage For="() => input.Name" class="text-danger" /></div>
+<div><label for="Email" class="form-label">Email</label><InputText id="Email" @bind-Value="input.Email" class="form-control" type="email" /><ValidationMessage For="() => input.Email" class="text-danger" /></div>
+<div><label for="Phone" class="form-label">Điện thoại</label><InputText id="Phone" @bind-Value="input.Phone" class="form-control" type="tel" /><ValidationMessage For="() => input.Phone" class="text-danger" /></div>
+<div><label for="Address" class="form-label">Địa chỉ</label><InputTextArea id="Address" @bind-Value="input.Address" class="form-control" rows="3" /><ValidationMessage For="() => input.Address" class="text-danger" /></div>
+<div class="admin-actions"><button class="btn btn-dark" type="submit">Lưu khách hàng</button><a class="btn btn-outline-dark" href="/Admin/Customers">Hủy</a></div></EditForm>
+}</section>
+@code {
+    [SupplyParameterFromQuery(Name = "id")] public int? Id { get; set; }
+    private CustomerInput input = new();
+    private bool missing;
+    private string? error;
+    protected override void OnParametersSet()
+    {
+        error = null;
+        missing = false;
+        input = new();
+        if (Id is null) return;
+        var item = ReadCustomers().FirstOrDefault(x => x.Id == Id);
+        if (item is null) { missing = true; return; }
+        input = new() { Id = item.Id, Name = item.Name, Email = item.Email, Phone = item.Phone, Address = item.Address };
+    }
+    private void Save()
+    {
+        error = null;
+        try
+        {
+            if (!SaveCustomer(new Customer(input.Id, input.Name.Trim(), input.Email.Trim(), input.Phone.Trim(), (input.Address ?? "").Trim()))) { error = "Email đã được sử dụng hoặc khách hàng không còn tồn tại."; return; }
+            Feedback.Message = "Đã lưu khách hàng.";
+            Navigation.NavigateTo("/Admin/Customers");
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException) { error = "Không thể lưu dữ liệu vào database."; }
+        catch (IOException) { error = "Không thể lưu dữ liệu. Vui lòng thử lại."; }
+        catch (UnauthorizedAccessException) { error = "Không thể ghi dữ liệu cửa hàng."; }
+    }
+}
+
+
+
+@code {
+private IReadOnlyList<Customer> ReadCustomers(){using var db=DbFactory.CreateDbContext();return db.Customers.AsNoTracking().OrderBy(x=>x.Id).ToArray();}
+private bool SaveCustomer(Customer item){if(!HasPermission(Permissions.Admin)||!HasPermission(Permissions.Customers))return false;using var db=DbFactory.CreateDbContext();if(db.Customers.Any(x=>x.Id!=item.Id&&x.Email==item.Email)||db.Users.Any(x=>x.CustomerId!=item.Id&&x.Email==item.Email))return false;if(item.Id!=0&&!db.Customers.Any(x=>x.Id==item.Id))return false;if(item.Id==0)db.Customers.Add(item);else db.Customers.Update(item);var account=db.Users.FirstOrDefault(x=>x.CustomerId==item.Id);if(account is not null){account.FullName=item.Name;account.Email=item.Email;account.NormalizedEmail=item.Email.ToUpperInvariant();account.PhoneNumber=item.Phone;account.SecurityStamp=Guid.NewGuid().ToString();}db.SaveChanges();return true;}
+[CascadingParameter] private Task<AuthenticationState> CurrentAuth {get;set;}=null!;
+private bool HasPermission(string permission){var user=CurrentAuth.GetAwaiter().GetResult().User;var id=user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;if(id is null)return false;using var db=DbFactory.CreateDbContext();return db.Users.Any(x=>x.Id==id&&!x.IsDisabled)&&(from ur in db.UserRoles join rc in db.RoleClaims on ur.RoleId equals rc.RoleId where ur.UserId==id&&rc.ClaimType=="Permission"&&rc.ClaimValue==permission select rc.Id).Any();}
+}
+
+

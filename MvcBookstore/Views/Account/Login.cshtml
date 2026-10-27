@@ -1,0 +1,5 @@
+﻿
+@model FormModel<LoginInput>
+@{ViewData["Title"]="Đăng nhập";}
+<section class="content-page"><h1>Đăng nhập</h1><form method="post" class="editor-form"><div asp-validation-summary="All" class="text-danger"></div><label asp-for="Input.UserName">Tên đăng nhập</label><input asp-for="Input.UserName" autocomplete="username"/><label asp-for="Input.Password">Mật khẩu</label><input asp-for="Input.Password" autocomplete="current-password"/><button class="primary-button">Đăng nhập</button></form><a asp-controller="Account" asp-action="Register">Chưa có tài khoản? Đăng ký</a></section>
+

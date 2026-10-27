@@ -1,0 +1,12 @@
+﻿@page "/Register"
+<PageTitle>Đăng ký khách hàng</PageTitle>
+<section class="info-page"><h1>Đăng ký khách hàng</h1><form action="/account/register" method="post" data-enhance="false" class="login-panel"><AntiforgeryToken/>
+@if(Error is not null){<p class="alert alert-danger">Thông tin không hợp lệ, email hoặc tên đăng nhập đã tồn tại. Mật khẩu cần ít nhất 6 ký tự.</p>}
+<div><label for="username">Tên đăng nhập</label><input id="username" name="username" type="text" class="form-control" required maxlength="200"/></div>
+<div><label for="fullname">Họ tên</label><input id="fullname" name="fullname" type="text" class="form-control" required maxlength="120"/></div>
+<div><label for="email">Email</label><input id="email" name="email" type="email" class="form-control" required maxlength="200"/></div>
+<div><label for="phone">Điện thoại</label><input id="phone" name="phone" type="tel" class="form-control" required maxlength="20"/></div>
+<div><label for="password">Mật khẩu (ít nhất 6 ký tự)</label><input id="password" name="password" type="password" class="form-control" required maxlength="200"/></div>
+<div><label for="confirm">Nhập lại mật khẩu</label><input id="confirm" name="confirm" type="password" class="form-control" required maxlength="200"/></div>
+<button class="btn btn-dark">Đăng ký</button><a href="/Login">Đã có tài khoản? Đăng nhập</a></form></section>
+@code{[SupplyParameterFromQuery]public string? Error{get;set;}}

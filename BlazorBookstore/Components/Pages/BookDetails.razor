@@ -1,0 +1,19 @@
+﻿@inject IDbContextFactory<AppDbContext> DbFactory
+@page "/Books/{Id:int}"
+@inject CartStore Cart
+@inject NavigationManager Navigation
+<PageTitle>@(book?.Name ?? "Không tìm thấy sách") - Mộc Books</PageTitle>
+<section class="info-page">
+@if (book is null) { <h1>Không tìm thấy sách</h1><a href="/">Về nhà sách</a> } else {
+<a class="text-link" href="/">← Tiếp tục khám phá</a><div class="book-detail"><div class="book-cover @book.ColorClass"><ProductPhoto Product="book" /></div><div><p class="eyebrow">@book.Category</p><h1>@book.Name</h1><p class="info-lead">@book.Author</p><p>@book.Description</p><dl><dt>Nhà xuất bản</dt><dd>@(string.IsNullOrWhiteSpace(book.Publisher) ? "Chưa cập nhật" : book.Publisher)</dd><dt>Năm xuất bản</dt><dd>@(book.PublicationYear == 0 ? "Chưa cập nhật" : book.PublicationYear.ToString())</dd><dt>Số trang</dt><dd>@(book.PageCount == 0 ? "Chưa cập nhật" : book.PageCount.ToString())</dd><dt>ISBN</dt><dd>@(string.IsNullOrWhiteSpace(book.Isbn) ? "Chưa cập nhật" : book.Isbn)</dd></dl><p class="book-price">@book.Price.ToString("N0")đ</p><button class="btn btn-dark" @onclick="AddToCart">Thêm vào giỏ hàng</button></div></div> }
+</section>
+@code {
+    [Parameter] public int Id { get; set; }
+    private Product? book;
+    protected override void OnParametersSet() => book = ReadProducts().FirstOrDefault(x => x.Id == Id);
+    private async Task AddToCart() { if (book is null) return; await Cart.AddAsync(book.Id); Navigation.NavigateTo("/Cart"); }
+}
+
+@code {
+private IReadOnlyList<Product> ReadProducts(){using var db=DbFactory.CreateDbContext();return db.Products.AsNoTracking().OrderBy(x=>x.Id).ToArray();}
+}

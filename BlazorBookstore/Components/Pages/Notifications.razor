@@ -1,0 +1,5 @@
+﻿@page "/Notifications"
+@inject NotificationStore Notices
+<PageTitle>Thông báo - Mộc Books</PageTitle>
+<section class="info-page"><p class="eyebrow">MỘC BOOKS / CẬP NHẬT</p><div class="page-heading"><h1>Thông báo</h1><button class="btn btn-outline-dark" disabled="@(Notices.UnreadCount == 0)" @onclick="Notices.MarkAllRead">Đánh dấu tất cả đã đọc</button></div><p class="text-muted" role="status">@Notices.UnreadCount thông báo chưa đọc trong lần truy cập này.</p><div class="notice-list">@foreach (var notice in NotificationStore.All) { <article class="notice-card @(Notices.IsRead(notice.Id) ? "is-read" : "")"><span class="notice-dot" aria-hidden="true"></span><div><h2>@notice.Title</h2><p>@notice.Content</p><a href="@notice.Link" @onclick="() => Notices.MarkRead(notice.Id)">Xem thêm →</a></div>@if (!Notices.IsRead(notice.Id)) { <button class="btn btn-sm btn-outline-dark" @onclick="() => Notices.MarkRead(notice.Id)">Đã đọc</button> }</article> }</div></section>
+

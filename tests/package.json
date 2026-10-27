@@ -1,0 +1,10 @@
+﻿{
+  "name": "bookstore-labs-smoke",
+  "private": true,
+  "scripts": {
+    "test": "node smoke.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.57.0"
+  }
+}

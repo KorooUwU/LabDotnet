@@ -1,0 +1,42 @@
+﻿@attribute [Authorize(Policy=Permissions.Products)]
+@inject IDbContextFactory<AppDbContext> DbFactory
+@page "/Admin/Products"
+@inject IJSRuntime JS
+<PageTitle>Quản lý sách - Mộc Books</PageTitle>
+<section class="admin-page"><p class="eyebrow">MỘC BOOKS / QUẢN TRỊ</p><h1>Quản lý sách</h1><AdminNav />
+<div class="admin-toolbar"><div class="admin-search"><input @bind="search" @bind:event="oninput" class="form-control" placeholder="Tìm sách…" aria-label="Tìm sách" /><button type="button" class="btn btn-link" @onclick="() => search = string.Empty">Tất cả</button></div><a class="btn btn-dark" href="/Admin/ProductEdit">+ Thêm sách</a></div><p class="text-muted">@Items.Count sách</p>
+<div class="admin-panel table-responsive"><table class="table align-middle"><thead><tr><th>Mã</th><th>Tên sách</th><th>Thể loại</th><th>Giá bán</th><th>Thao tác</th></tr></thead><tbody>
+@foreach (var item in Items) {
+<tr><td>#@item.Id</td><td><strong>@item.Name</strong><br /><small>@item.Author</small></td><td>@item.Category</td><td>@item.Price.ToString("N0")đ</td><td><div class="admin-actions"><a class="btn btn-sm btn-outline-dark" href="@($"/Admin/ProductEdit?id={item.Id}")">Sửa</a><button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => Delete(item.Id)">Xóa</button></div></td></tr>
+}
+@if (Items.Count == 0) { <tr><td colspan="5" class="admin-empty">Chưa có sách phù hợp. Hãy thêm mới hoặc thay đổi từ khóa tìm kiếm.</td></tr> }
+</tbody></table></div></section>
+
+@if (message is not null) { <div class="alert alert-info" role="status">@message</div> }
+@code {
+    [SupplyParameterFromQuery(Name = "Search")] public string? Query { get; set; }
+    private string search = "";
+    private string? message;
+    private IReadOnlyList<Product> Items => ReadProducts().Where(x => string.IsNullOrWhiteSpace(search) || x.Name.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) || x.Category.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) || x.Author.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) || x.Isbn.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase)).ToArray();
+    protected override void OnParametersSet() => search = Query ?? "";
+    private async Task Delete(int id)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", "Xóa sách này? Thao tác không thể hoàn tác.")) return;
+        try { message = DeleteProduct(id) ? "Đã xóa sách." : "Không tìm thấy sách."; }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException) { message = "Không thể xóa dữ liệu đang được sử dụng."; }
+        catch (IOException) { message = "Không thể lưu dữ liệu. Vui lòng thử lại."; }
+        catch (UnauthorizedAccessException) { message = "Không thể ghi dữ liệu cửa hàng."; }
+    }
+}
+
+
+
+
+@code {
+private IReadOnlyList<Product> ReadProducts(){using var db=DbFactory.CreateDbContext();return db.Products.AsNoTracking().OrderBy(x=>x.Id).ToArray();}
+private bool DeleteProduct(int id){if(!HasPermission(Permissions.Admin)||!HasPermission(Permissions.Products))return false;using var db=DbFactory.CreateDbContext();var item=db.Products.Find(id);if(item is null)return false;db.Products.Remove(item);db.SaveChanges();return true;}
+[CascadingParameter] private Task<AuthenticationState> CurrentAuth {get;set;}=null!;
+private bool HasPermission(string permission){var user=CurrentAuth.GetAwaiter().GetResult().User;var id=user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;if(id is null)return false;using var db=DbFactory.CreateDbContext();return db.Users.Any(x=>x.Id==id&&!x.IsDisabled)&&(from ur in db.UserRoles join rc in db.RoleClaims on ur.RoleId equals rc.RoleId where ur.UserId==id&&rc.ClaimType=="Permission"&&rc.ClaimValue==permission select rc.Id).Any();}
+}
+
+

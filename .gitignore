@@ -1,0 +1,9 @@
+﻿**/bin/
+**/obj/
+.vs/
+**/node_modules/
+App_Data/Backups/
+App_Data/product-images/
+RazorBookstore/App_Data/
+**/TestResults/
+

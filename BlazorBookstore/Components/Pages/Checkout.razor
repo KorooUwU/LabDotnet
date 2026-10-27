@@ -1,0 +1,31 @@
+﻿@page "/Checkout"
+@attribute [Authorize]
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject AuthenticationStateProvider Auth
+@inject CartStore Basket
+@inject NavigationManager Nav
+<PageTitle>Thanh toán</PageTitle>
+<section class="info-page"><h1>Xác nhận đơn hàng</h1>
+@if(message is not null){<p class="alert alert-danger" role="alert">@message</p>}
+@if(loaded){<p>Tổng tiền: <strong>@total.ToString("N0")đ</strong> · Miễn phí giao hàng</p><EditForm Model="input" OnValidSubmit="Save" FormName="Checkout" class="login-panel"><DataAnnotationsValidator/><ValidationSummary/><label>Địa chỉ nhận hàng<InputText @bind-Value="input.Address" class="form-control"/></label><label>Ghi chú<InputTextArea @bind-Value="input.Note" class="form-control"/></label><p>Thanh toán khi nhận hàng (COD). Bạn trả tiền cho đơn vị giao hàng khi nhận sách.</p><button class="btn btn-dark" disabled="@saving">Xác nhận đặt hàng</button></EditForm>}else{<p>Đang tải giỏ hàng…</p>}<a href="/Cart">Về giỏ hàng</a></section>
+@code {
+ private CheckoutInput input=new(){Token=Guid.NewGuid().ToString("N")};
+ private bool loaded,saving;private decimal total;private string? message;
+ protected override async Task OnInitializedAsync(){var principal=(await Auth.GetAuthenticationStateAsync()).User;var id=principal.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;await using var db=await DbFactory.CreateDbContextAsync();var user=await db.Users.FirstOrDefaultAsync(x=>x.Id==id);if(user?.CustomerId is int c)input.Address=(await db.Customers.FindAsync(c))?.Address??"";}
+ protected override async Task OnAfterRenderAsync(bool firstRender){if(!firstRender)return;await Basket.LoadAsync();total=Basket.Lines.Sum(x=>x.Total);loaded=true;StateHasChanged();}
+ private async Task Save(){
+  if(saving)return;saving=true;message=null;
+  try {
+   var principal=(await Auth.GetAuthenticationStateAsync()).User;var id=principal.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+   await using var db=await DbFactory.CreateDbContextAsync();var user=await db.Users.FirstOrDefaultAsync(x=>x.Id==id);
+   if(user?.CustomerId is not int customerId||user.IsDisabled){message="Cần tài khoản khách hàng để đặt hàng.";return;}
+   var previous=await db.Orders.FirstOrDefaultAsync(x=>x.CheckoutToken==input.Token&&x.CustomerId==customerId);if(previous is not null){Nav.NavigateTo("/MyOrders?id="+previous.Id);return;}
+   var basket=Basket.Lines.ToArray();if(basket.Length==0){message="Giỏ hàng đang trống.";return;}
+   var ids=basket.Select(x=>x.Product.Id).ToArray();var products=await db.Products.AsNoTracking().Where(x=>ids.Contains(x.Id)).ToDictionaryAsync(x=>x.Id);
+   if(products.Count!=basket.Length){message="Có sách đã ngừng bán. Hãy cập nhật giỏ hàng.";return;}
+   var lines=basket.Select(x=>new OrderLine{ProductId=x.Product.Id,ProductName=products[x.Product.Id].Name,UnitPrice=products[x.Product.Id].Price,Quantity=x.Quantity}).ToList();
+   var order=new Order{CustomerId=customerId,Address=input.Address.Trim(),Note=input.Note?.Trim()??"",CheckoutToken=input.Token,PaymentMethod="COD",Lines=lines};
+   db.Orders.Add(order);await db.SaveChangesAsync();await Basket.ClearAsync();Nav.NavigateTo("/MyOrders?id="+order.Id);
+  }catch(DbUpdateException){message="Không thể lưu đơn hàng. Vui lòng kiểm tra lịch sử đơn trước khi thử lại.";}finally{saving=false;}
+ }
+}

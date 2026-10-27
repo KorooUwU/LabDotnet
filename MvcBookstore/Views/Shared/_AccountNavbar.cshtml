@@ -1,0 +1,5 @@
+﻿@if (User.Identity?.IsAuthenticated == true) {
+<div class="account-navbar"><span>Xin chào, <strong>@(User.FindFirst("FullName")?.Value ?? User.Identity.Name)</strong></span><form asp-controller="Account" asp-action="Logout" method="post"><button class="text-link" type="submit">Đăng xuất</button></form></div>
+} else { <a asp-controller="Account" asp-action="Login">Đăng nhập</a> }
+
+

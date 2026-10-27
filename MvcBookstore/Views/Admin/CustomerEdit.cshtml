@@ -1,0 +1,5 @@
+﻿
+@model CustomerEditModel
+@{ViewData["Title"]="Thông tin khách hàng";}
+<section class="admin-page"><h1>@(Model.Input.Id==0?"Thêm khách hàng":"Sửa khách hàng")</h1><form method="post" class="admin-panel admin-form"><div asp-validation-summary="All" class="text-danger"></div><input asp-for="Input.Id" type="hidden" /><div><label asp-for="Input.Name">Tên khách hàng</label><input asp-for="Input.Name" class="form-control" /></div><div><label asp-for="Input.Email">Email</label><input asp-for="Input.Email" class="form-control" /></div><div><label asp-for="Input.Phone">Điện thoại</label><input asp-for="Input.Phone" class="form-control" /></div><div><label asp-for="Input.Address">Địa chỉ</label><textarea asp-for="Input.Address" class="form-control"></textarea></div><div class="admin-actions"><button class="btn btn-dark">Lưu khách hàng</button><a href="/Admin/Customers" class="btn btn-outline-dark">Hủy</a></div></form></section>
+

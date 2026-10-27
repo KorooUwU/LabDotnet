@@ -1,0 +1,12 @@
+﻿@page "/Login"
+<PageTitle>Đăng nhập - Mộc Books</PageTitle>
+<section class="info-page login-page"><p class="eyebrow">TÀI KHOẢN MỘC</p><h1>Chào bạn trở lại.</h1><p class="info-lead">Đăng nhập bằng tài khoản khách hàng hoặc quản trị.</p>
+<form action="/account/login" method="post" data-enhance="false" class="login-panel"><AntiforgeryToken />
+@if (Error is not null) { <p class="alert alert-danger" role="alert">Tên đăng nhập hoặc mật khẩu không đúng.</p> }
+<div><label for="login-username" class="form-label">Tên đăng nhập</label><input id="login-username" name="username" type="text" maxlength="50" class="form-control" autocomplete="username" required /></div>
+<div><label for="login-password" class="form-label">Mật khẩu</label><input id="login-password" name="password" type="password" maxlength="200" class="form-control" autocomplete="current-password" required /></div>
+<button class="btn btn-dark" type="submit">Đăng nhập</button><a href="/Register">Chưa có tài khoản? Đăng ký</a></form></section>
+@code { [SupplyParameterFromQuery] public string? Error { get; set; } }
+
+
+

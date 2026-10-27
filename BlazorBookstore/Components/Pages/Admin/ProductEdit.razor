@@ -1,0 +1,99 @@
+﻿@attribute [Authorize(Policy=Permissions.Products)]
+@inject IDbContextFactory<AppDbContext> DbFactory
+@page "/Admin/ProductEdit"
+@inject NavigationManager Navigation
+@inject AdminFeedback Feedback
+@inject ProductImageStore Images
+<PageTitle>Thông tin sách - Mộc Books</PageTitle>
+<section class="admin-page"><p class="eyebrow">MỘC BOOKS / QUẢN TRỊ</p><h1>@(input.Id == 0 ? "Thêm sách" : "Sửa sách")</h1><AdminNav />
+@if (missing) { <p role="alert">Không tìm thấy sách.</p><a href="/Admin/Products">Quay lại danh sách</a> } else {
+<EditForm Model="input" OnValidSubmit="Save" FormName="ProductEdit" class="admin-panel admin-form"><DataAnnotationsValidator /><ValidationSummary class="text-danger" /><p class="text-danger" role="alert">@error</p>
+<div><label for="Name" class="form-label">Tên sách</label><InputText id="Name" @bind-Value="input.Name" class="form-control" /><ValidationMessage For="() => input.Name" class="text-danger" /></div>
+<div><label for="Author" class="form-label">Tác giả</label><InputText id="Author" @bind-Value="input.Author" class="form-control" /><ValidationMessage For="() => input.Author" class="text-danger" /></div>
+<div><label for="Publisher" class="form-label">Nhà xuất bản</label><InputText id="Publisher" @bind-Value="input.Publisher" class="form-control" /><ValidationMessage For="() => input.Publisher" class="text-danger" /></div>
+<div><label for="PublicationYear" class="form-label">Năm xuất bản</label><InputNumber id="PublicationYear" @bind-Value="input.PublicationYear" class="form-control" /><ValidationMessage For="() => input.PublicationYear" class="text-danger" /></div>
+<div><label for="Isbn" class="form-label">ISBN (không bắt buộc)</label><InputText id="Isbn" @bind-Value="input.Isbn" class="form-control" /><ValidationMessage For="() => input.Isbn" class="text-danger" /></div>
+<div><label for="PageCount" class="form-label">Số trang</label><InputNumber id="PageCount" @bind-Value="input.PageCount" class="form-control" /><ValidationMessage For="() => input.PageCount" class="text-danger" /></div>
+<div><label for="Description" class="form-label">Mô tả</label><InputTextArea id="Description" @bind-Value="input.Description" class="form-control" rows="3" /><ValidationMessage For="() => input.Description" class="text-danger" /></div>
+<div><label for="CategoryId">Danh mục</label><InputSelect id="CategoryId" @bind-Value="input.CategoryId" class="form-select"><option value="0">Chọn danh mục</option>@foreach(var category in ReadCategories()){<option value="@category.Id">@category.Name</option>}</InputSelect></div>
+<div><label for="Price" class="form-label">Giá bán (đ)</label><InputNumber id="Price" @bind-Value="input.Price" class="form-control" min="1" max="1000000000" step="1" /><ValidationMessage For="() => input.Price" class="text-danger" /></div>
+<div><label for="product-file" class="form-label">Ảnh bìa sách</label><InputFile id="product-file" OnChange="SelectImage" accept="image/jpeg,image/png,image/webp" class="form-control" disabled="@uploading" /><small class="text-muted">JPG, PNG hoặc WebP, tối đa 2 MB. Ảnh được lưu khi bấm Lưu sách.</small>@if (uploading) { <p role="status">Đang đọc ảnh…</p> }@if (preview is not null) { <div class="product-upload-preview"><img src="@preview" alt="Xem trước ảnh sách" /><button type="button" class="btn btn-sm btn-outline-danger" @onclick="RemoveImage" disabled="@uploading">Bỏ ảnh</button></div> }</div>
+<div><label for="ColorClass" class="form-label">Màu nền</label><InputSelect id="ColorClass" @bind-Value="input.ColorClass" class="form-select"><option value="clay">Đất nung</option><option value="amber">Hổ phách</option><option value="sage">Xanh lá</option><option value="terracotta">Cam đất</option></InputSelect><ValidationMessage For="() => input.ColorClass" class="text-danger" /></div>
+<div class="admin-actions"><button class="btn btn-dark" type="submit" disabled="@uploading">Lưu sách</button><a class="btn btn-outline-dark" href="/Admin/Products">Hủy</a></div></EditForm>
+}</section>
+@code {
+    [SupplyParameterFromQuery(Name = "id")] public int? Id { get; set; }
+    private ProductInput input = new();
+    private bool missing, uploading;
+    private byte[]? pendingImage;
+    private string? preview;
+    private string? error;
+    protected override void OnParametersSet()
+    {
+        error = null;
+        pendingImage = null; preview = null;
+        missing = false;
+        input = new();
+        if (Id is null) return;
+        var item = ReadProducts().FirstOrDefault(x => x.Id == Id);
+        if (item is null) { missing = true; return; }
+        input = new() { Id = item.Id, CategoryId = item.CategoryId ?? 0, Name = item.Name, Description = item.Description, Category = item.Category, Price = item.Price, Emoji = item.Emoji, ColorClass = item.ColorClass, ImageUrl = item.ImageUrl, Author = item.Author, Publisher = item.Publisher, PublicationYear = item.PublicationYear, Isbn = item.Isbn, PageCount = item.PageCount };
+        preview = item.ImageUrl;
+    }
+    private async Task SelectImage(InputFileChangeEventArgs args)
+    {
+        uploading = true; error = null;
+        try
+        {
+            using var stream = args.File.OpenReadStream(ProductImageStore.MaxBytes);
+            using var memory = new MemoryStream();
+            await stream.CopyToAsync(memory);
+            var bytes = memory.ToArray();
+            var (_, type) = ProductImageStore.Detect(bytes);
+            pendingImage = bytes;
+            preview = $"data:{type};base64,{Convert.ToBase64String(bytes)}";
+        }
+        catch (InvalidDataException exception) { error = exception.Message; }
+        catch (JSException) { error = "Không thể đọc ảnh. Vui lòng chọn lại."; }
+        catch (IOException) { error = "Ảnh không hợp lệ hoặc lớn hơn 2 MB. Vui lòng chọn lại."; }
+        catch (InvalidOperationException) { error = "Không thể đọc ảnh. Vui lòng chọn lại."; }
+        finally { uploading = false; }
+    }
+    private void RemoveImage() { pendingImage = null; preview = null; input.ImageUrl = null; error = null; }
+    private void Save()
+    {
+        if (uploading) return;
+        error = null;
+        string? uploaded = null;
+        var saved = false;
+        try
+        {
+            if (pendingImage is not null) uploaded = Images.Save(pendingImage);
+            if (!SaveProduct(new Product(input.Id, input.Name.Trim(), input.Description.Trim(), input.Category.Trim(), input.Price, input.Emoji, input.ColorClass, uploaded ?? input.ImageUrl, input.Author.Trim(), input.Publisher.Trim(), input.PublicationYear, input.Isbn.Trim(), input.PageCount){CategoryId=input.CategoryId})) { error = "Sách không còn tồn tại."; return; }
+            saved = true;
+            Feedback.Message = "Đã lưu sách.";
+            Navigation.NavigateTo("/Admin/Products");
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException) { error = "Không thể lưu dữ liệu vào database."; }
+        catch (IOException) { error = "Không thể lưu dữ liệu. Vui lòng thử lại."; }
+        catch (UnauthorizedAccessException) { error = "Không thể ghi dữ liệu cửa hàng."; }
+        finally { if (!saved && uploaded is not null) { try { Images.RemoveNew(uploaded); } catch (IOException) { } catch (UnauthorizedAccessException) { } } }
+    }
+}
+
+
+
+
+
+
+
+@code {
+private IReadOnlyList<Category> ReadCategories(){using var db=DbFactory.CreateDbContext();return db.Categories.AsNoTracking().ToArray();}
+private IReadOnlyList<Product> ReadProducts(){using var db=DbFactory.CreateDbContext();return db.Products.AsNoTracking().OrderBy(x=>x.Id).ToArray();}
+private bool SaveProduct(Product item){if(!HasPermission(Permissions.Admin)||!HasPermission(Permissions.Products))return false;using var db=DbFactory.CreateDbContext();var category=db.Categories.Find(item.CategoryId);if(category is null)return false;if(item.Id!=0&&!db.Products.Any(x=>x.Id==item.Id))return false;item=item with{Category=category.Name};if(item.Id==0)db.Products.Add(item);else db.Products.Update(item);db.SaveChanges();return true;}
+[CascadingParameter] private Task<AuthenticationState> CurrentAuth {get;set;}=null!;
+private bool HasPermission(string permission){var user=CurrentAuth.GetAwaiter().GetResult().User;var id=user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;if(id is null)return false;using var db=DbFactory.CreateDbContext();return db.Users.Any(x=>x.Id==id&&!x.IsDisabled)&&(from ur in db.UserRoles join rc in db.RoleClaims on ur.RoleId equals rc.RoleId where ur.UserId==id&&rc.ClaimType=="Permission"&&rc.ClaimValue==permission select rc.Id).Any();}
+}
+
+
+

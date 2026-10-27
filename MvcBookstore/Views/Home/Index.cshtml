@@ -1,0 +1,9 @@
+﻿
+@model HomeModel
+@{ ViewData["Title"]="Nhà sách"; }
+<section class="shop-hero"><div><p class="eyebrow">MỘC BOOKS / 2026</p><h1>Mở một trang sách,<br /><em>chạm một thế giới.</em></h1><p class="hero-copy">Tìm một cuốn sách đồng hành cùng bạn, từ văn học và thiếu nhi đến công nghệ và phát triển bản thân.</p><a class="primary-button" href="#products">Khám phá sách ↓</a></div><div class="hero-note"><span>01</span><p>Một trang sách,<br />một chút bình yên.</p></div></section>
+<section id="products" class="products-section"><div class="section-heading"><h2>Tủ sách của Mộc</h2><span>@Model.Books.Count cuốn sách</span></div><div class="category-filters"><a href="/">Tất cả</a>@foreach(var category in Model.Categories.Select(x=>x.Name)){<a asp-controller="Home" asp-action="Index" asp-route-Category="@category">@category</a>}</div><div class="product-grid">@foreach(var book in Model.Books){<article class="product-card"><a asp-controller="Home" asp-action="BookDetails" asp-route-id="@book.Id"><div class="product-image @book.ColorClass"><partial name="_ProductPhoto" model="book" /></div></a><div class="product-info"><span class="eyebrow">@book.Category</span><h3><a asp-controller="Home" asp-action="BookDetails" asp-route-id="@book.Id">@book.Name</a></h3><p>@book.Author</p><p>@book.Description</p><div class="product-footer"><strong>@book.Price.ToString("N0")đ</strong><form method="post" asp-controller="Cart" asp-action="Add"><input type="hidden" name="id" value="@book.Id" /><button class="primary-button">Thêm vào giỏ</button></form></div></div></article>}</div>@if(!Model.Books.Any()){<p>Không tìm thấy sách phù hợp.</p>}</section>
+
+
+
+

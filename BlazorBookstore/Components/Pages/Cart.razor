@@ -1,0 +1,52 @@
+﻿@page "/Cart"
+@inject CartStore Basket
+<PageTitle>Giỏ hàng - Mộc Books</PageTitle>
+<section class="cart-page">
+    <div class="section-heading cart-heading">
+        <div><p class="eyebrow">ĐƠN HÀNG CỦA BẠN</p><h1>Giỏ hàng</h1></div>
+        <a href="/" class="text-link">← Tiếp tục mua sắm</a>
+    </div>
+
+    @if (!loaded) { <p role="status">Đang tải giỏ hàng…</p> }
+    else if (Basket.Lines.Count == 0)
+    {
+        <div class="empty-cart"><span>○</span><h2>Giỏ hàng đang trống</h2><p>Hãy chọn một cuốn sách bạn yêu thích để bắt đầu.</p><a href="/" class="btn btn-dark">Xem sách</a></div>
+    }
+    else
+    {
+        <div class="cart-layout">
+            <div class="cart-lines">
+                @foreach (var line in Basket.Lines)
+                {
+                    <div class="cart-line">
+                        <div class="cart-thumb @line.Product.ColorClass"><ProductPhoto Product="line.Product" /></div>
+                        <div class="cart-line-copy"><h2>@line.Product.Name</h2><p>@line.Product.Description</p><div class="quantity-controls"><button type="button" @onclick="() => Basket.SetQuantityAsync(line.Product.Id, line.Quantity - 1)" aria-label="Giảm số lượng @line.Product.Name">−</button><span>@line.Quantity</span><button type="button" disabled="@(line.Quantity >= 999)" @onclick="() => Basket.AddAsync(line.Product.Id)" aria-label="Tăng số lượng @line.Product.Name">+</button></div></div>
+                        <strong>@line.Total.ToString("N0")đ</strong>
+                        <button class="remove-button" type="button" @onclick="() => Basket.RemoveAsync(line.Product.Id)" aria-label="Xóa @line.Product.Name">×</button>
+                    </div>
+                }
+                <div class="clear-form"><button class="text-link" type="button" @onclick="Basket.ClearAsync">Xóa toàn bộ giỏ hàng</button></div>
+            </div>
+            <aside class="order-summary"><p class="eyebrow">TỔNG ĐƠN HÀNG</p><div><span>Tạm tính</span><strong>@Total.ToString("N0")đ</strong></div><div><span>Phí giao hàng</span><span class="free-shipping">Miễn phí</span></div><hr /><div class="summary-total"><span>Tổng cộng</span><strong>@Total.ToString("N0")đ</strong></div><a href="/Checkout" class="btn btn-dark checkout-button">Thanh toán</a><small>Thanh toán an toàn · Đổi trả trong 7 ngày</small></aside>
+        </div>
+    }
+</section>
+
+@if (Basket.Error is not null) { <p class="alert alert-warning" role="status">@Basket.Error</p> }
+@code {
+    private bool loaded;
+    private decimal Total => Basket.Lines.Sum(line => line.Total);
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await Basket.LoadAsync();
+        loaded = true;
+        StateHasChanged();
+    }
+}
+
+
+
+
+
+

@@ -1,0 +1,24 @@
+﻿@attribute [Authorize(Policy=Permissions.Admin)]
+@inject IDbContextFactory<AppDbContext> DbFactory
+@page "/Admin"
+@page "/Admin/Index"
+<PageTitle>Dashboard quản trị - Mộc Books</PageTitle>
+<section class="admin-page"><p class="eyebrow">MỘC BOOKS / QUẢN TRỊ</p><h1>Dashboard</h1><p class="text-muted">Quản lý cửa hàng từ một nơi.</p><AdminNav />
+<div class="admin-stats">
+<article><span>Sách</span><strong>@ReadProducts().Count</strong><a href="/Admin/Products">Quản lý sách →</a></article>
+<article><span>Khách hàng</span><strong>@ReadCustomers().Count</strong><a href="/Admin/Customers">Quản lý khách hàng →</a></article>
+<article><span>Đơn hàng</span><strong>@ReadOrders().Count</strong><a href="/Admin/Orders">Quản lý đơn hàng →</a></article><article><span>Thể loại</span><strong>@ReadCategories().Count</strong><span>Trong bộ sưu tập hiện tại</span></article>
+</div><div class="admin-panel"><h2>Bắt đầu quản lý</h2><p>Thêm sách để hiển thị trên cửa hàng hoặc lưu thông tin khách hàng để tiện tra cứu.</p><div class="admin-actions"><a class="btn btn-dark" href="/Admin/ProductEdit">+ Thêm sách</a><a class="btn btn-outline-dark" href="/Admin/CustomerEdit">+ Thêm khách hàng</a><a class="btn btn-outline-dark" href="/Admin/OrderEdit">+ Thêm đơn hàng</a></div></div></section>
+
+
+
+
+@code {
+private IReadOnlyList<Category> ReadCategories(){using var db=DbFactory.CreateDbContext();return db.Categories.AsNoTracking().ToArray();}
+private IReadOnlyList<Product> ReadProducts(){using var db=DbFactory.CreateDbContext();return db.Products.AsNoTracking().OrderBy(x=>x.Id).ToArray();}
+private IReadOnlyList<Customer> ReadCustomers(){using var db=DbFactory.CreateDbContext();return db.Customers.AsNoTracking().OrderBy(x=>x.Id).ToArray();}
+private IReadOnlyList<Order> ReadOrders(){using var db=DbFactory.CreateDbContext();return db.Orders.AsNoTracking().Include(x=>x.Customer).Include(x=>x.Lines).OrderByDescending(x=>x.Id).ToArray();}
+}
+
+
+

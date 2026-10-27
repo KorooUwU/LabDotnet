@@ -1,0 +1,7 @@
+﻿@if (!string.IsNullOrWhiteSpace(Product.ImageUrl)) {
+    <img src="@Product.ImageUrl" alt="@Product.Name" class="product-photo" loading="lazy" />
+} else {
+    <span class="product-photo-placeholder">Chưa có ảnh</span>
+}
+@code { [Parameter, EditorRequired] public Product Product { get; set; } = null!; }
+

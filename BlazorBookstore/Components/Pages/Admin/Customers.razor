@@ -1,0 +1,52 @@
+﻿@attribute [Authorize(Policy=Permissions.Customers)]
+@inject IDbContextFactory<AppDbContext> DbFactory
+@page "/Admin/Customers"
+@inject IJSRuntime JS
+<PageTitle>Quản lý khách hàng - Mộc Books</PageTitle>
+<section class="admin-page">
+    <p class="eyebrow">MỘC BOOKS / QUẢN TRỊ</p>
+    <h1>Quản lý khách hàng</h1><AdminNav />
+<div class="admin-toolbar">
+    <div class="admin-search">
+        <input @bind="search" @bind:event="oninput" class="form-control" placeholder="Tìm khách hàng…" aria-label="Tìm khách hàng" />
+        
+        <button type="button" class="btn btn-link" @onclick="() => search = string.Empty">Tất cả</button>
+    </div>
+    <a class="btn btn-dark" href="/Admin/CustomerEdit">+ Thêm khách hàng</a>
+</div>
+<p class="text-muted">@Items.Count khách hàng</p>
+<div class="admin-panel table-responsive"><table class="table align-middle"><thead><tr><th>Mã</th><th>Tên khách hàng</th><th>Email</th><th>Điện thoại</th><th>Địa chỉ</th><th>Thao tác</th></tr></thead><tbody>
+@foreach (var item in Items) {
+<tr><td>#@item.Id</td><td><strong>@item.Name</strong></td><td>@item.Email</td><td>@item.Phone</td><td>@item.Address</td><td><div class="admin-actions"><a class="btn btn-sm btn-outline-dark" href="@($"/Admin/CustomerEdit?id={item.Id}")">Sửa</a><button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => Delete(item.Id)">Xóa</button></div></td></tr>
+}
+@if (Items.Count == 0) { <tr><td colspan="6" class="admin-empty">Chưa có khách hàng phù hợp. Hãy thêm mới hoặc thay đổi từ khóa tìm kiếm.</td></tr> }
+</tbody></table></div></section>
+
+@if (message is not null) { <div class="alert alert-info" role="status">@message</div> }
+@code {
+    [SupplyParameterFromQuery(Name = "Search")] public string? Query { get; set; }
+    private string search = "";
+    private string? message;
+    private IReadOnlyList<Customer> Items => ReadCustomers().Where(x => string.IsNullOrWhiteSpace(search) || x.Name.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) || x.Email.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) || x.Phone.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase)).ToArray();
+    protected override void OnParametersSet() => search = Query ?? "";
+    private async Task Delete(int id)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", "Xóa khách hàng này? Thao tác không thể hoàn tác.")) return;
+        try { message = DeleteCustomer(id) ? "Đã xóa khách hàng." : "Không thể xóa: khách hàng không tồn tại hoặc đã có đơn hàng/tài khoản."; }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException) { message = "Không thể xóa dữ liệu đang được sử dụng."; }
+        catch (IOException) { message = "Không thể lưu dữ liệu. Vui lòng thử lại."; }
+        catch (UnauthorizedAccessException) { message = "Không thể ghi dữ liệu cửa hàng."; }
+    }
+}
+
+
+
+
+@code {
+private IReadOnlyList<Customer> ReadCustomers(){using var db=DbFactory.CreateDbContext();return db.Customers.AsNoTracking().OrderBy(x=>x.Id).ToArray();}
+private bool DeleteCustomer(int id){if(!HasPermission(Permissions.Admin)||!HasPermission(Permissions.Customers))return false;using var db=DbFactory.CreateDbContext();if(db.Orders.Any(x=>x.CustomerId==id)||db.Users.Any(x=>x.CustomerId==id)||db.Accounts.Any(x=>x.CustomerId==id))return false;var item=db.Customers.Find(id);if(item is null)return false;db.Customers.Remove(item);db.SaveChanges();return true;}
+[CascadingParameter] private Task<AuthenticationState> CurrentAuth {get;set;}=null!;
+private bool HasPermission(string permission){var user=CurrentAuth.GetAwaiter().GetResult().User;var id=user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;if(id is null)return false;using var db=DbFactory.CreateDbContext();return db.Users.Any(x=>x.Id==id&&!x.IsDisabled)&&(from ur in db.UserRoles join rc in db.RoleClaims on ur.RoleId equals rc.RoleId where ur.UserId==id&&rc.ClaimType=="Permission"&&rc.ClaimValue==permission select rc.Id).Any();}
+}
+
+

@@ -1,0 +1,10 @@
+﻿@inherits LayoutComponentBase
+<div class="admin-shell">
+<aside class="admin-sidebar"><div class="sidebar-brand"><a href="/Admin" class="brand-mark">MỘC<span>.</span></a><button class="sidebar-toggle" @onclick="() => menuOpen = !menuOpen" aria-label="Mở menu quản trị" aria-controls="admin-menu" aria-expanded="@menuOpen.ToString().ToLowerInvariant()">☰</button></div>
+<div id="admin-menu" class="sidebar-content @(menuOpen ? "is-open" : "")"><p class="sidebar-caption">KHÔNG GIAN QUẢN TRỊ</p><nav class="sidebar-links" aria-label="Menu quản trị"><NavLink href="/Admin" Match="NavLinkMatch.All" @onclick="CloseMenu">▦ Tổng quan</NavLink><NavLink href="/Admin/Products" @onclick="CloseMenu">◇ Quản lý sách</NavLink><NavLink href="/Admin/Customers" @onclick="CloseMenu">○ Quản lý khách hàng</NavLink><NavLink href="/Admin/Orders" @onclick="CloseMenu">▱ Quản lý đơn hàng</NavLink><a href="/Admin/Categories">Quản lý danh mục</a><a href="/Admin/Roles">Vai trò và phân quyền</a></nav><a class="admin-back" href="/">← Về cửa hàng</a></div></aside>
+<div class="admin-main"><header class="admin-topbar"><span>MỘC / ADMIN</span><AccountNavbar /></header><main class="admin-content" role="main">@Body</main></div>
+</div><BlazorError />
+@code { private bool menuOpen; private void CloseMenu() => menuOpen = false; }
+
+
+

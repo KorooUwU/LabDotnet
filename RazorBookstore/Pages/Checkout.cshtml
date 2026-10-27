@@ -1,0 +1,4 @@
+﻿@page
+@model CheckoutModel
+@{ViewData["Title"]="Thanh toán";}
+<section class="content-page"><h1>Xác nhận đơn hàng</h1><p>Tổng tiền: <strong>@Model.Total.ToString("N0")đ</strong> · Miễn phí giao hàng</p><form method="post" class="editor-form"><div asp-validation-summary="All" class="text-danger"></div><input asp-for="Input.Token" type="hidden"/><label asp-for="Input.Address">Địa chỉ nhận hàng</label><input asp-for="Input.Address"/><label asp-for="Input.Note">Ghi chú</label><textarea asp-for="Input.Note"></textarea><label asp-for="Input.PaymentMethod">Phương thức thanh toán</label><select asp-for="Input.PaymentMethod"><option value="COD">Thanh toán khi nhận hàng (COD)</option></select><p>Bạn thanh toán cho đơn vị giao hàng khi nhận sách.</p><button class="primary-button">Xác nhận đặt hàng</button></form><a href="/Cart">Về giỏ hàng</a></section>

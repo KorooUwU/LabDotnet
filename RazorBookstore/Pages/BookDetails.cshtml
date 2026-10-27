@@ -1,0 +1,5 @@
+@page "/Books/{id:int}"
+@model BookDetailsModel
+@{ ViewData["Title"]=Model.Book.Name; }
+<a href="/">← Tất cả sách</a><div class="book-detail"><div class="book-cover @Model.Book.ColorClass"><partial name="_ProductPhoto" model="Model.Book" /></div><section><p class="eyebrow">@Model.Book.Category</p><h1>@Model.Book.Name</h1><p>@Model.Book.Description</p><dl><dt>Tác giả</dt><dd>@Model.Book.Author</dd><dt>Nhà xuất bản</dt><dd>@Model.Book.Publisher</dd><dt>Năm xuất bản</dt><dd>@Model.Book.PublicationYear</dd><dt>Số trang</dt><dd>@Model.Book.PageCount</dd><dt>ISBN</dt><dd>@Model.Book.Isbn</dd></dl><h2>@Model.Book.Price.ToString("N0")đ</h2><form method="post" asp-page-handler="Add"><button class="primary-button">Thêm vào giỏ hàng</button></form></section></div>
+
