@@ -1,4 +1,4 @@
-﻿@inject IDbContextFactory<AppDbContext> DbFactory
+@inject IDbContextFactory<AppDbContext> DbFactory
 @page "/"
 @page "/Index"
 @inject CartStore Cart
@@ -38,9 +38,13 @@
 </section>
 
 @code {
-    [SupplyParameterFromQuery] public string? Search { get; set; }
-    [SupplyParameterFromQuery] public string? Category { get; set; }
+    [SupplyParameterFromQuery]
+    public string? Search { get; set; }
+
+    [SupplyParameterFromQuery]
+    public string? Category { get; set; }
     private IReadOnlyList<Product> FilteredProducts => ReadProducts().Where(p => (string.IsNullOrWhiteSpace(Search) || p.Name.Contains(Search.Trim(), StringComparison.OrdinalIgnoreCase) || p.Author.Contains(Search.Trim(), StringComparison.OrdinalIgnoreCase) || p.Isbn.Contains(Search.Trim(), StringComparison.OrdinalIgnoreCase) || p.Description.Contains(Search.Trim(), StringComparison.OrdinalIgnoreCase) || p.Category.Contains(Search.Trim(), StringComparison.OrdinalIgnoreCase)) && (string.IsNullOrWhiteSpace(Category) || p.Category.Equals(Category, StringComparison.OrdinalIgnoreCase))).ToArray();
+
     private async Task AddToCart(int id)
     {
         await Cart.AddAsync(id);
@@ -53,7 +57,15 @@
 
 
 @code {
-private IReadOnlyList<Category> ReadCategories(){using var db=DbFactory.CreateDbContext();return db.Categories.AsNoTracking().ToArray();}
-private IReadOnlyList<Product> ReadProducts(){using var db=DbFactory.CreateDbContext();return db.Products.AsNoTracking().OrderBy(x=>x.Id).ToArray();}
-}
+    private IReadOnlyList<Category> ReadCategories()
+    {
+        using var db = DbFactory.CreateDbContext();
+        return db.Categories.AsNoTracking().ToArray();
+    }
 
+    private IReadOnlyList<Product> ReadProducts()
+    {
+        using var db = DbFactory.CreateDbContext();
+        return db.Products.AsNoTracking().OrderBy(x => x.Id).ToArray();
+    }
+}

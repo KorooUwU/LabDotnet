@@ -1,4 +1,4 @@
-﻿namespace WebApplication1;
+namespace WebApplication1;
 public static class Permissions
 {
     public const string Admin = "Admin.Access";

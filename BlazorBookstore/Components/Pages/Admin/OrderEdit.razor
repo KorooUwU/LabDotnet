@@ -1,4 +1,4 @@
-﻿@attribute [Authorize(Policy=Permissions.Orders)]
+@attribute [Authorize(Policy=Permissions.Orders)]
 @inject IDbContextFactory<AppDbContext> DbFactory
 @page "/Admin/OrderEdit"
 @inject NavigationManager Navigation
@@ -16,7 +16,9 @@
 @foreach (var line in lines) { <div class="order-edit-line" @key="line"><div><strong>@line.ProductName</strong><small>@line.UnitPrice.ToString("N0")đ / sách</small></div><div><label>Số lượng<InputNumber class="form-control" @bind-Value="line.Quantity" min="1" max="999" /></label></div><strong>@((line.Quantity * line.UnitPrice).ToString("N0"))đ</strong><button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => lines.Remove(line)">Bỏ</button></div> }
 <strong>Tổng tiền: @lines.Sum(x => x.Quantity * x.UnitPrice).ToString("N0")đ</strong><div class="admin-actions"><button class="btn btn-dark" type="submit">Lưu đơn hàng</button><a class="btn btn-outline-dark" href="/Admin/Orders">Hủy</a></div></EditForm> }</section>
 @code {
-    [SupplyParameterFromQuery] public int? Id { get; set; }
+    [SupplyParameterFromQuery]
+    public int? Id { get; set; }
+
     private OrderInput input = new();
     private List<OrderLine> lines = [];
     private int productId;
@@ -24,50 +26,158 @@
     private string? error;
     protected override void OnParametersSet()
     {
-        input = new(); lines = []; error = null; missing = false; productId = 0;
-        if (Id is null) return;
+        input = new();
+        lines = [];
+        error = null;
+        missing = false;
+        productId = 0;
+        if (Id is null)
+            return;
         var order = ReadOrders().FirstOrDefault(x => x.Id == Id);
-        if (order is null) { missing = true; return; }
-        input = new() { CustomerId = order.CustomerId, Address = order.Address, Note = order.Note, Status = order.Status };
+        if (order is null)
+        {
+            missing = true;
+            return;
+        }
+
+        input = new()
+        {
+            CustomerId = order.CustomerId,
+            Address = order.Address,
+            Note = order.Note,
+            Status = order.Status
+        };
         lines = order.Lines.Select(x => new OrderLine { ProductId = x.ProductId, ProductName = x.ProductName, UnitPrice = x.UnitPrice, Quantity = x.Quantity }).ToList();
     }
+
     private void AddLine()
     {
         var product = ReadProducts().FirstOrDefault(x => x.Id == productId);
-        if (product is null) { error = "Vui lòng chọn sách."; return; }
+        if (product is null)
+        {
+            error = "Vui lòng chọn sách.";
+            return;
+        }
+
         var line = lines.FirstOrDefault(x => x.ProductId == product.Id);
-        if (line is null) lines.Add(new() { ProductId = product.Id, ProductName = product.Name, UnitPrice = product.Price, Quantity = 1 });
-        else if (line.Quantity < 999) line.Quantity++;
+        if (line is null)
+            lines.Add(new() { ProductId = product.Id, ProductName = product.Name, UnitPrice = product.Price, Quantity = 1 });
+        else if (line.Quantity < 999)
+            line.Quantity++;
         error = null;
     }
+
     private void Save()
     {
-        if (lines.Count == 0 || lines.Any(x => x.Quantity < 1 || x.Quantity > 999)) { error = "Đơn cần ít nhất một sách, số lượng từ 1 đến 999."; return; }
+        if (lines.Count == 0 || lines.Any(x => x.Quantity < 1 || x.Quantity > 999))
+        {
+            error = "Đơn cần ít nhất một sách, số lượng từ 1 đến 999.";
+            return;
+        }
+
         try
         {
-            var order = new Order { Id = Id ?? 0, CustomerId = input.CustomerId, Address = input.Address.Trim(), Note = input.Note.Trim(), Status = input.Status, Lines = lines.Select(x => new OrderLine { ProductId = x.ProductId, ProductName = x.ProductName, UnitPrice = x.UnitPrice, Quantity = x.Quantity }).ToList() };
-            if (!SaveOrder(order)) { error = "Dữ liệu đơn hàng không hợp lệ hoặc không còn tồn tại."; return; }
-            Feedback.Message = "Đã lưu đơn hàng."; Navigation.NavigateTo("/Admin/Orders");
+            var order = new Order
+            {
+                Id = Id ?? 0,
+                CustomerId = input.CustomerId,
+                Address = input.Address.Trim(),
+                Note = input.Note.Trim(),
+                Status = input.Status,
+                Lines = lines.Select(x => new OrderLine { ProductId = x.ProductId, ProductName = x.ProductName, UnitPrice = x.UnitPrice, Quantity = x.Quantity }).ToList()
+            };
+            if (!SaveOrder(order))
+            {
+                error = "Dữ liệu đơn hàng không hợp lệ hoặc không còn tồn tại.";
+                return;
+            }
+
+            Feedback.Message = "Đã lưu đơn hàng.";
+            Navigation.NavigateTo("/Admin/Orders");
         }
-        catch (Microsoft.EntityFrameworkCore.DbUpdateException) { error = "Không thể lưu đơn hàng. Vui lòng kiểm tra khách hàng và thử lại."; }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+        {
+            error = "Không thể lưu đơn hàng. Vui lòng kiểm tra khách hàng và thử lại.";
+        }
     }
+
     private sealed class OrderInput
     {
-        [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn khách hàng.")] public int CustomerId { get; set; }
-        [Required(ErrorMessage = "Vui lòng nhập địa chỉ."), StringLength(300)] public string Address { get; set; } = "";
-        [StringLength(500)] public string Note { get; set; } = "";
+        [Range(1, int.MaxValue, ErrorMessage = "Vui lòng chọn khách hàng.")]
+        public int CustomerId { get; set; }
+
+        [Required(ErrorMessage = "Vui lòng nhập địa chỉ."), StringLength(300)]
+        public string Address { get; set; } = "";
+
+        [StringLength(500)]
+        public string Note { get; set; } = "";
         public string Status { get; set; } = "Pending";
     }
 }
 
 
 @code {
-private IReadOnlyList<Product> ReadProducts(){using var db=DbFactory.CreateDbContext();return db.Products.AsNoTracking().OrderBy(x=>x.Id).ToArray();}
-private IReadOnlyList<Customer> ReadCustomers(){using var db=DbFactory.CreateDbContext();return db.Customers.AsNoTracking().OrderBy(x=>x.Id).ToArray();}
-private IReadOnlyList<Order> ReadOrders(){using var db=DbFactory.CreateDbContext();return db.Orders.AsNoTracking().Include(x=>x.Customer).Include(x=>x.Lines).OrderByDescending(x=>x.Id).ToArray();}
-private bool SaveOrder(Order order){if(!HasPermission(Permissions.Admin)||!HasPermission(Permissions.Orders))return false;using var db=DbFactory.CreateDbContext();if(!db.Customers.Any(x=>x.Id==order.CustomerId)||!OrderStatuses.All.ContainsKey(order.Status)||order.Lines.Count==0||order.Lines.Any(x=>x.Quantity<1||x.Quantity>999||x.UnitPrice<0))return false;var old=order.Id==0?null:db.Orders.Include(x=>x.Lines).FirstOrDefault(x=>x.Id==order.Id);if(order.Id!=0&&old is null)return false;if(old is null){order.Customer=null!;db.Orders.Add(order);}else{old.CustomerId=order.CustomerId;old.Status=order.Status;old.Address=order.Address;old.Note=order.Note;db.RemoveRange(old.Lines);old.Lines=order.Lines.Select(x=>new OrderLine{ProductId=x.ProductId,ProductName=x.ProductName,UnitPrice=x.UnitPrice,Quantity=x.Quantity}).ToList();}db.SaveChanges();return true;}
-[CascadingParameter] private Task<AuthenticationState> CurrentAuth {get;set;}=null!;
-private bool HasPermission(string permission){var user=CurrentAuth.GetAwaiter().GetResult().User;var id=user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;if(id is null)return false;using var db=DbFactory.CreateDbContext();return db.Users.Any(x=>x.Id==id&&!x.IsDisabled)&&(from ur in db.UserRoles join rc in db.RoleClaims on ur.RoleId equals rc.RoleId where ur.UserId==id&&rc.ClaimType=="Permission"&&rc.ClaimValue==permission select rc.Id).Any();}
+    private IReadOnlyList<Product> ReadProducts()
+    {
+        using var db = DbFactory.CreateDbContext();
+        return db.Products.AsNoTracking().OrderBy(x => x.Id).ToArray();
+    }
+
+    private IReadOnlyList<Customer> ReadCustomers()
+    {
+        using var db = DbFactory.CreateDbContext();
+        return db.Customers.AsNoTracking().OrderBy(x => x.Id).ToArray();
+    }
+
+    private IReadOnlyList<Order> ReadOrders()
+    {
+        using var db = DbFactory.CreateDbContext();
+        return db.Orders.AsNoTracking().Include(x => x.Customer).Include(x => x.Lines).OrderByDescending(x => x.Id).ToArray();
+    }
+
+    private bool SaveOrder(Order order)
+    {
+        if (!HasPermission(Permissions.Admin) || !HasPermission(Permissions.Orders))
+            return false;
+        using var db = DbFactory.CreateDbContext();
+        if (!db.Customers.Any(x => x.Id == order.CustomerId) || !OrderStatuses.All.ContainsKey(order.Status) || order.Lines.Count == 0 || order.Lines.Any(x => x.Quantity < 1 || x.Quantity > 999 || x.UnitPrice < 0))
+            return false;
+        var old = order.Id == 0 ? null : db.Orders.Include(x => x.Lines).FirstOrDefault(x => x.Id == order.Id);
+        if (order.Id != 0 && old is null)
+            return false;
+        if (old is null)
+        {
+            order.Customer = null!;
+            db.Orders.Add(order);
+        }
+        else
+        {
+            old.CustomerId = order.CustomerId;
+            old.Status = order.Status;
+            old.Address = order.Address;
+            old.Note = order.Note;
+            db.RemoveRange(old.Lines);
+            old.Lines = order.Lines.Select(x => new OrderLine { ProductId = x.ProductId, ProductName = x.ProductName, UnitPrice = x.UnitPrice, Quantity = x.Quantity }).ToList();
+        }
+
+        db.SaveChanges();
+        return true;
+    }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> CurrentAuth { get; set; } = null!;
+
+    private bool HasPermission(string permission)
+    {
+        var user = CurrentAuth.GetAwaiter().GetResult().User;
+        var id = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (id is null)
+            return false;
+        using var db = DbFactory.CreateDbContext();
+        return db.Users.Any(x => x.Id == id && !x.IsDisabled) && (
+            from ur in db.UserRoles
+            join rc in db.RoleClaims on ur.RoleId equals rc.RoleId
+            where ur.UserId == id && rc.ClaimType == "Permission" && rc.ClaimValue == permission
+            select rc.Id).Any();
+    }
 }
-
-

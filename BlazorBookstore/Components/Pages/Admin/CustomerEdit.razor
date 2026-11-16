@@ -1,4 +1,4 @@
-﻿@attribute [Authorize(Policy=Permissions.Customers)]
+@attribute [Authorize(Policy=Permissions.Customers)]
 @inject IDbContextFactory<AppDbContext> DbFactory
 @page "/Admin/CustomerEdit"
 @inject NavigationManager Navigation
@@ -14,7 +14,9 @@
 <div class="admin-actions"><button class="btn btn-dark" type="submit">Lưu khách hàng</button><a class="btn btn-outline-dark" href="/Admin/Customers">Hủy</a></div></EditForm>
 }</section>
 @code {
-    [SupplyParameterFromQuery(Name = "id")] public int? Id { get; set; }
+    [SupplyParameterFromQuery(Name = "id")]
+    public int? Id { get; set; }
+
     private CustomerInput input = new();
     private bool missing;
     private string? error;
@@ -23,33 +25,104 @@
         error = null;
         missing = false;
         input = new();
-        if (Id is null) return;
+        if (Id is null)
+            return;
         var item = ReadCustomers().FirstOrDefault(x => x.Id == Id);
-        if (item is null) { missing = true; return; }
-        input = new() { Id = item.Id, Name = item.Name, Email = item.Email, Phone = item.Phone, Address = item.Address };
+        if (item is null)
+        {
+            missing = true;
+            return;
+        }
+
+        input = new()
+        {
+            Id = item.Id,
+            Name = item.Name,
+            Email = item.Email,
+            Phone = item.Phone,
+            Address = item.Address
+        };
     }
+
     private void Save()
     {
         error = null;
         try
         {
-            if (!SaveCustomer(new Customer(input.Id, input.Name.Trim(), input.Email.Trim(), input.Phone.Trim(), (input.Address ?? "").Trim()))) { error = "Email đã được sử dụng hoặc khách hàng không còn tồn tại."; return; }
+            if (!SaveCustomer(new Customer(input.Id, input.Name.Trim(), input.Email.Trim(), input.Phone.Trim(), (input.Address ?? "").Trim())))
+            {
+                error = "Email đã được sử dụng hoặc khách hàng không còn tồn tại.";
+                return;
+            }
+
             Feedback.Message = "Đã lưu khách hàng.";
             Navigation.NavigateTo("/Admin/Customers");
         }
-        catch (Microsoft.EntityFrameworkCore.DbUpdateException) { error = "Không thể lưu dữ liệu vào database."; }
-        catch (IOException) { error = "Không thể lưu dữ liệu. Vui lòng thử lại."; }
-        catch (UnauthorizedAccessException) { error = "Không thể ghi dữ liệu cửa hàng."; }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+        {
+            error = "Không thể lưu dữ liệu vào database.";
+        }
+        catch (IOException)
+        {
+            error = "Không thể lưu dữ liệu. Vui lòng thử lại.";
+        }
+        catch (UnauthorizedAccessException)
+        {
+            error = "Không thể ghi dữ liệu cửa hàng.";
+        }
     }
 }
 
 
 
 @code {
-private IReadOnlyList<Customer> ReadCustomers(){using var db=DbFactory.CreateDbContext();return db.Customers.AsNoTracking().OrderBy(x=>x.Id).ToArray();}
-private bool SaveCustomer(Customer item){if(!HasPermission(Permissions.Admin)||!HasPermission(Permissions.Customers))return false;using var db=DbFactory.CreateDbContext();if(db.Customers.Any(x=>x.Id!=item.Id&&x.Email==item.Email)||db.Users.Any(x=>x.CustomerId!=item.Id&&x.Email==item.Email))return false;if(item.Id!=0&&!db.Customers.Any(x=>x.Id==item.Id))return false;if(item.Id==0)db.Customers.Add(item);else db.Customers.Update(item);var account=db.Users.FirstOrDefault(x=>x.CustomerId==item.Id);if(account is not null){account.FullName=item.Name;account.Email=item.Email;account.NormalizedEmail=item.Email.ToUpperInvariant();account.PhoneNumber=item.Phone;account.SecurityStamp=Guid.NewGuid().ToString();}db.SaveChanges();return true;}
-[CascadingParameter] private Task<AuthenticationState> CurrentAuth {get;set;}=null!;
-private bool HasPermission(string permission){var user=CurrentAuth.GetAwaiter().GetResult().User;var id=user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;if(id is null)return false;using var db=DbFactory.CreateDbContext();return db.Users.Any(x=>x.Id==id&&!x.IsDisabled)&&(from ur in db.UserRoles join rc in db.RoleClaims on ur.RoleId equals rc.RoleId where ur.UserId==id&&rc.ClaimType=="Permission"&&rc.ClaimValue==permission select rc.Id).Any();}
+    private IReadOnlyList<Customer> ReadCustomers()
+    {
+        using var db = DbFactory.CreateDbContext();
+        return db.Customers.AsNoTracking().OrderBy(x => x.Id).ToArray();
+    }
+
+    private bool SaveCustomer(Customer item)
+    {
+        if (!HasPermission(Permissions.Admin) || !HasPermission(Permissions.Customers))
+            return false;
+        using var db = DbFactory.CreateDbContext();
+        if (db.Customers.Any(x => x.Id != item.Id && x.Email == item.Email) || db.Users.Any(x => x.CustomerId != item.Id && x.Email == item.Email))
+            return false;
+        if (item.Id != 0 && !db.Customers.Any(x => x.Id == item.Id))
+            return false;
+        if (item.Id == 0)
+            db.Customers.Add(item);
+        else
+            db.Customers.Update(item);
+        var account = db.Users.FirstOrDefault(x => x.CustomerId == item.Id);
+        if (account is not null)
+        {
+            account.FullName = item.Name;
+            account.Email = item.Email;
+            account.NormalizedEmail = item.Email.ToUpperInvariant();
+            account.PhoneNumber = item.Phone;
+            account.SecurityStamp = Guid.NewGuid().ToString();
+        }
+
+        db.SaveChanges();
+        return true;
+    }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> CurrentAuth { get; set; } = null!;
+
+    private bool HasPermission(string permission)
+    {
+        var user = CurrentAuth.GetAwaiter().GetResult().User;
+        var id = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (id is null)
+            return false;
+        using var db = DbFactory.CreateDbContext();
+        return db.Users.Any(x => x.Id == id && !x.IsDisabled) && (
+            from ur in db.UserRoles
+            join rc in db.RoleClaims on ur.RoleId equals rc.RoleId
+            where ur.UserId == id && rc.ClaimType == "Permission" && rc.ClaimValue == permission
+            select rc.Id).Any();
+    }
 }
-
-

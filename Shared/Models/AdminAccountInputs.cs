@@ -1,7 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace WebApplication1;
-
 public sealed class AccountRolesInput
 {
     [Required, StringLength(450)]
@@ -26,4 +25,3 @@ public sealed class AdminPasswordInput
     [DataType(DataType.Password)]
     public string ConfirmPassword { get; set; } = "";
 }
-

@@ -1,4 +1,4 @@
-﻿@page "/Cart"
+@page "/Cart"
 @inject CartStore Basket
 <PageTitle>Giỏ hàng - Mộc Books</PageTitle>
 <section class="cart-page">
@@ -36,17 +36,13 @@
 @code {
     private bool loaded;
     private decimal Total => Basket.Lines.Sum(line => line.Total);
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender) return;
+        if (!firstRender)
+            return;
         await Basket.LoadAsync();
         loaded = true;
         StateHasChanged();
     }
 }
-
-
-
-
-
-

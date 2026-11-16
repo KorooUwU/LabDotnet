@@ -1,4 +1,4 @@
-﻿@attribute [Authorize(Policy=Permissions.Products)]
+@attribute [Authorize(Policy=Permissions.Products)]
 @inject IDbContextFactory<AppDbContext> DbFactory
 @page "/Admin/Products"
 @inject IJSRuntime JS
@@ -14,18 +14,34 @@
 
 @if (message is not null) { <div class="alert alert-info" role="status">@message</div> }
 @code {
-    [SupplyParameterFromQuery(Name = "Search")] public string? Query { get; set; }
+    [SupplyParameterFromQuery(Name = "Search")]
+    public string? Query { get; set; }
+
     private string search = "";
     private string? message;
     private IReadOnlyList<Product> Items => ReadProducts().Where(x => string.IsNullOrWhiteSpace(search) || x.Name.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) || x.Category.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) || x.Author.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) || x.Isbn.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase)).ToArray();
+
     protected override void OnParametersSet() => search = Query ?? "";
     private async Task Delete(int id)
     {
-        if (!await JS.InvokeAsync<bool>("confirm", "Xóa sách này? Thao tác không thể hoàn tác.")) return;
-        try { message = DeleteProduct(id) ? "Đã xóa sách." : "Không tìm thấy sách."; }
-        catch (Microsoft.EntityFrameworkCore.DbUpdateException) { message = "Không thể xóa dữ liệu đang được sử dụng."; }
-        catch (IOException) { message = "Không thể lưu dữ liệu. Vui lòng thử lại."; }
-        catch (UnauthorizedAccessException) { message = "Không thể ghi dữ liệu cửa hàng."; }
+        if (!await JS.InvokeAsync<bool>("confirm", "Xóa sách này? Thao tác không thể hoàn tác."))
+            return;
+        try
+        {
+            message = DeleteProduct(id) ? "Đã xóa sách." : "Không tìm thấy sách.";
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+        {
+            message = "Không thể xóa dữ liệu đang được sử dụng.";
+        }
+        catch (IOException)
+        {
+            message = "Không thể lưu dữ liệu. Vui lòng thử lại.";
+        }
+        catch (UnauthorizedAccessException)
+        {
+            message = "Không thể ghi dữ liệu cửa hàng.";
+        }
     }
 }
 
@@ -33,10 +49,39 @@
 
 
 @code {
-private IReadOnlyList<Product> ReadProducts(){using var db=DbFactory.CreateDbContext();return db.Products.AsNoTracking().OrderBy(x=>x.Id).ToArray();}
-private bool DeleteProduct(int id){if(!HasPermission(Permissions.Admin)||!HasPermission(Permissions.Products))return false;using var db=DbFactory.CreateDbContext();var item=db.Products.Find(id);if(item is null)return false;db.Products.Remove(item);db.SaveChanges();return true;}
-[CascadingParameter] private Task<AuthenticationState> CurrentAuth {get;set;}=null!;
-private bool HasPermission(string permission){var user=CurrentAuth.GetAwaiter().GetResult().User;var id=user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;if(id is null)return false;using var db=DbFactory.CreateDbContext();return db.Users.Any(x=>x.Id==id&&!x.IsDisabled)&&(from ur in db.UserRoles join rc in db.RoleClaims on ur.RoleId equals rc.RoleId where ur.UserId==id&&rc.ClaimType=="Permission"&&rc.ClaimValue==permission select rc.Id).Any();}
+    private IReadOnlyList<Product> ReadProducts()
+    {
+        using var db = DbFactory.CreateDbContext();
+        return db.Products.AsNoTracking().OrderBy(x => x.Id).ToArray();
+    }
+
+    private bool DeleteProduct(int id)
+    {
+        if (!HasPermission(Permissions.Admin) || !HasPermission(Permissions.Products))
+            return false;
+        using var db = DbFactory.CreateDbContext();
+        var item = db.Products.Find(id);
+        if (item is null)
+            return false;
+        db.Products.Remove(item);
+        db.SaveChanges();
+        return true;
+    }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> CurrentAuth { get; set; } = null!;
+
+    private bool HasPermission(string permission)
+    {
+        var user = CurrentAuth.GetAwaiter().GetResult().User;
+        var id = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (id is null)
+            return false;
+        using var db = DbFactory.CreateDbContext();
+        return db.Users.Any(x => x.Id == id && !x.IsDisabled) && (
+            from ur in db.UserRoles
+            join rc in db.RoleClaims on ur.RoleId equals rc.RoleId
+            where ur.UserId == id && rc.ClaimType == "Permission" && rc.ClaimValue == permission
+            select rc.Id).Any();
+    }
 }
-
-

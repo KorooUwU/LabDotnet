@@ -1,4 +1,4 @@
-﻿@attribute [Authorize(Policy=Permissions.Admin)]
+@attribute [Authorize(Policy=Permissions.Admin)]
 @inject IDbContextFactory<AppDbContext> DbFactory
 @page "/Admin"
 @page "/Admin/Index"
@@ -14,11 +14,27 @@
 
 
 @code {
-private IReadOnlyList<Category> ReadCategories(){using var db=DbFactory.CreateDbContext();return db.Categories.AsNoTracking().ToArray();}
-private IReadOnlyList<Product> ReadProducts(){using var db=DbFactory.CreateDbContext();return db.Products.AsNoTracking().OrderBy(x=>x.Id).ToArray();}
-private IReadOnlyList<Customer> ReadCustomers(){using var db=DbFactory.CreateDbContext();return db.Customers.AsNoTracking().OrderBy(x=>x.Id).ToArray();}
-private IReadOnlyList<Order> ReadOrders(){using var db=DbFactory.CreateDbContext();return db.Orders.AsNoTracking().Include(x=>x.Customer).Include(x=>x.Lines).OrderByDescending(x=>x.Id).ToArray();}
+    private IReadOnlyList<Category> ReadCategories()
+    {
+        using var db = DbFactory.CreateDbContext();
+        return db.Categories.AsNoTracking().ToArray();
+    }
+
+    private IReadOnlyList<Product> ReadProducts()
+    {
+        using var db = DbFactory.CreateDbContext();
+        return db.Products.AsNoTracking().OrderBy(x => x.Id).ToArray();
+    }
+
+    private IReadOnlyList<Customer> ReadCustomers()
+    {
+        using var db = DbFactory.CreateDbContext();
+        return db.Customers.AsNoTracking().OrderBy(x => x.Id).ToArray();
+    }
+
+    private IReadOnlyList<Order> ReadOrders()
+    {
+        using var db = DbFactory.CreateDbContext();
+        return db.Orders.AsNoTracking().Include(x => x.Customer).Include(x => x.Lines).OrderByDescending(x => x.Id).ToArray();
+    }
 }
-
-
-

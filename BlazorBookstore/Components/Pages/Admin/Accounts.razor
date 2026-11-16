@@ -1,4 +1,4 @@
-﻿@page "/Admin/Accounts"
+@page "/Admin/Accounts"
 @attribute [Authorize(Policy = Permissions.Roles)]
 @inject IDbContextFactory<AppDbContext> DbFactory
 
@@ -21,17 +21,22 @@
     private string search = "";
     private List<ApplicationUser> accounts = [];
     private Dictionary<string, string[]> accountRoles = [];
-    private IEnumerable<ApplicationUser> Filtered => accounts.Where(x => string.IsNullOrWhiteSpace(search)
-        || (x.UserName + " " + x.FullName + " " + x.Email).Contains(search.Trim(), StringComparison.OrdinalIgnoreCase));
+    private IEnumerable<ApplicationUser> Filtered => accounts.Where(x => string.IsNullOrWhiteSpace(search) || (x.UserName + " " + x.FullName + " " + x.Email).Contains(search.Trim(), StringComparison.OrdinalIgnoreCase));
 
     protected override async Task OnInitializedAsync()
     {
         await using var db = await DbFactory.CreateDbContextAsync();
         accounts = await db.Users.AsNoTracking().OrderBy(x => x.UserName).ToListAsync();
-        var assignments = await (from ur in db.UserRoles
-                                 join role in db.Roles on ur.RoleId equals role.Id
-                                 select new { ur.UserId, role.Name }).ToListAsync();
+        var assignments = await (
+            from ur in db.UserRoles
+            join role in db.Roles on ur.RoleId equals role.Id
+            select new
+            {
+                ur.UserId,
+                role.Name
+            }
+
+        ).ToListAsync();
         accountRoles = assignments.GroupBy(x => x.UserId).ToDictionary(g => g.Key, g => g.Select(x => x.Name!).ToArray());
     }
 }
-

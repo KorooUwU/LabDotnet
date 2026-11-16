@@ -1,4 +1,4 @@
-﻿@attribute [Authorize(Policy=Permissions.Orders)]
+@attribute [Authorize(Policy=Permissions.Orders)]
 @inject IDbContextFactory<AppDbContext> DbFactory
 @page "/Admin/Orders"
 @inject IJSRuntime JS
@@ -11,20 +11,57 @@
     private string search = "", status = "";
     private string? message;
     private IReadOnlyList<Order> Items => ReadOrders().Where(x => (status == "" || x.Status == status) && (string.IsNullOrWhiteSpace(search) || x.Id.ToString() == search.Trim().TrimStart('#') || x.Customer.Name.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) || x.Customer.Email.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase))).ToArray();
+
     private async Task Delete(int id)
     {
-        if (!await JS.InvokeAsync<bool>("confirm", "Xóa đơn hàng này và các dòng sách?")) return;
-        try { message = DeleteOrder(id) ? "Đã xóa đơn hàng." : "Không tìm thấy đơn hàng."; }
-        catch (Microsoft.EntityFrameworkCore.DbUpdateException) { message = "Không thể xóa đơn hàng. Vui lòng thử lại."; }
+        if (!await JS.InvokeAsync<bool>("confirm", "Xóa đơn hàng này và các dòng sách?"))
+            return;
+        try
+        {
+            message = DeleteOrder(id) ? "Đã xóa đơn hàng." : "Không tìm thấy đơn hàng.";
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+        {
+            message = "Không thể xóa đơn hàng. Vui lòng thử lại.";
+        }
     }
 }
 
 
 @code {
-private IReadOnlyList<Order> ReadOrders(){using var db=DbFactory.CreateDbContext();return db.Orders.AsNoTracking().Include(x=>x.Customer).Include(x=>x.Lines).OrderByDescending(x=>x.Id).ToArray();}
-private bool DeleteOrder(int id){if(!HasPermission(Permissions.Admin)||!HasPermission(Permissions.Orders))return false;using var db=DbFactory.CreateDbContext();var item=db.Orders.Find(id);if(item is null)return false;db.Orders.Remove(item);db.SaveChanges();return true;}
-[CascadingParameter] private Task<AuthenticationState> CurrentAuth {get;set;}=null!;
-private bool HasPermission(string permission){var user=CurrentAuth.GetAwaiter().GetResult().User;var id=user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;if(id is null)return false;using var db=DbFactory.CreateDbContext();return db.Users.Any(x=>x.Id==id&&!x.IsDisabled)&&(from ur in db.UserRoles join rc in db.RoleClaims on ur.RoleId equals rc.RoleId where ur.UserId==id&&rc.ClaimType=="Permission"&&rc.ClaimValue==permission select rc.Id).Any();}
+    private IReadOnlyList<Order> ReadOrders()
+    {
+        using var db = DbFactory.CreateDbContext();
+        return db.Orders.AsNoTracking().Include(x => x.Customer).Include(x => x.Lines).OrderByDescending(x => x.Id).ToArray();
+    }
+
+    private bool DeleteOrder(int id)
+    {
+        if (!HasPermission(Permissions.Admin) || !HasPermission(Permissions.Orders))
+            return false;
+        using var db = DbFactory.CreateDbContext();
+        var item = db.Orders.Find(id);
+        if (item is null)
+            return false;
+        db.Orders.Remove(item);
+        db.SaveChanges();
+        return true;
+    }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> CurrentAuth { get; set; } = null!;
+
+    private bool HasPermission(string permission)
+    {
+        var user = CurrentAuth.GetAwaiter().GetResult().User;
+        var id = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (id is null)
+            return false;
+        using var db = DbFactory.CreateDbContext();
+        return db.Users.Any(x => x.Id == id && !x.IsDisabled) && (
+            from ur in db.UserRoles
+            join rc in db.RoleClaims on ur.RoleId equals rc.RoleId
+            where ur.UserId == id && rc.ClaimType == "Permission" && rc.ClaimValue == permission
+            select rc.Id).Any();
+    }
 }
-
-

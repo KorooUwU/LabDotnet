@@ -1,4 +1,5 @@
-﻿using WebApplication1;
+using WebApplication1;
+
 var builder = WebApplication.CreateBuilder(args);
 builder.AddLab("Razor");
 builder.Services.AddRazorPages(options =>
@@ -18,11 +19,28 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizePage("/MyOrders");
 }).AddMvcOptions(options => options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
 builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession(options => { options.Cookie.Name = "MocBooks.Razor.Cart"; options.Cookie.HttpOnly = true; options.Cookie.IsEssential = true; options.IdleTimeout = TimeSpan.FromHours(8); });
+builder.Services.AddSession(options =>
+{
+    options.Cookie.Name = "MocBooks.Razor.Cart";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.IdleTimeout = TimeSpan.FromHours(8);
+});
 var app = builder.Build();
 await app.InitializeLabAsync();
-if (!app.Environment.IsDevelopment()) { app.UseExceptionHandler("/Error"); app.UseHsts(); }
-app.UseHttpsRedirection(); app.UseStatusCodePagesWithReExecute("/NotFound"); app.UseRouting(); app.UseSession(); app.UseAuthentication(); app.UseAuthorization();
-app.MapStaticAssets(); app.MapRazorPages(); app.MapProductImages(); app.Run();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error");
+    app.UseHsts();
+}
 
-
+app.UseHttpsRedirection();
+app.UseStatusCodePagesWithReExecute("/NotFound");
+app.UseRouting();
+app.UseSession();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapStaticAssets();
+app.MapRazorPages();
+app.MapProductImages();
+app.Run();

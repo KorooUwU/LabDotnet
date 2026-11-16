@@ -1,5 +1,4 @@
-﻿namespace WebApplication1;
-
+namespace WebApplication1;
 public sealed class Order
 {
     public int Id { get; set; }
@@ -14,6 +13,7 @@ public sealed class Order
     public List<OrderLine> Lines { get; set; } = [];
     public decimal Total => Lines.Sum(x => x.UnitPrice * x.Quantity);
 }
+
 public sealed class OrderLine
 {
     public int Id { get; set; }
@@ -25,6 +25,7 @@ public sealed class OrderLine
     public decimal UnitPrice { get; set; }
     public int Quantity { get; set; }
 }
+
 public static class OrderStatuses
 {
     public static IReadOnlyDictionary<string, string> All { get; } = new Dictionary<string, string>
@@ -36,6 +37,7 @@ public static class OrderStatuses
         ["Cancelled"] = "Đã hủy"
     };
 }
+
 public sealed class UserAccount
 {
     public string UserName { get; set; } = "";
@@ -46,5 +48,3 @@ public sealed class UserAccount
     public string Role { get; set; } = "Customer";
     public int? CustomerId { get; set; }
 }
-
-

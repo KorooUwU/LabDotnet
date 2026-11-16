@@ -1,8 +1,7 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using WebApplication1;
 
 namespace MvcBookstore.Models;
-
 public sealed class AccountsModel
 {
     public string? Search { get; set; }
@@ -18,4 +17,3 @@ public sealed class AccountEditModel
     public AccountRolesInput RoleInput { get; set; } = new();
     public AdminPasswordInput PasswordInput { get; set; } = new();
 }
-

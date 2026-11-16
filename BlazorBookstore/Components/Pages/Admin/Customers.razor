@@ -1,4 +1,4 @@
-﻿@attribute [Authorize(Policy=Permissions.Customers)]
+@attribute [Authorize(Policy=Permissions.Customers)]
 @inject IDbContextFactory<AppDbContext> DbFactory
 @page "/Admin/Customers"
 @inject IJSRuntime JS
@@ -24,18 +24,34 @@
 
 @if (message is not null) { <div class="alert alert-info" role="status">@message</div> }
 @code {
-    [SupplyParameterFromQuery(Name = "Search")] public string? Query { get; set; }
+    [SupplyParameterFromQuery(Name = "Search")]
+    public string? Query { get; set; }
+
     private string search = "";
     private string? message;
     private IReadOnlyList<Customer> Items => ReadCustomers().Where(x => string.IsNullOrWhiteSpace(search) || x.Name.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) || x.Email.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) || x.Phone.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase)).ToArray();
+
     protected override void OnParametersSet() => search = Query ?? "";
     private async Task Delete(int id)
     {
-        if (!await JS.InvokeAsync<bool>("confirm", "Xóa khách hàng này? Thao tác không thể hoàn tác.")) return;
-        try { message = DeleteCustomer(id) ? "Đã xóa khách hàng." : "Không thể xóa: khách hàng không tồn tại hoặc đã có đơn hàng/tài khoản."; }
-        catch (Microsoft.EntityFrameworkCore.DbUpdateException) { message = "Không thể xóa dữ liệu đang được sử dụng."; }
-        catch (IOException) { message = "Không thể lưu dữ liệu. Vui lòng thử lại."; }
-        catch (UnauthorizedAccessException) { message = "Không thể ghi dữ liệu cửa hàng."; }
+        if (!await JS.InvokeAsync<bool>("confirm", "Xóa khách hàng này? Thao tác không thể hoàn tác."))
+            return;
+        try
+        {
+            message = DeleteCustomer(id) ? "Đã xóa khách hàng." : "Không thể xóa: khách hàng không tồn tại hoặc đã có đơn hàng/tài khoản.";
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+        {
+            message = "Không thể xóa dữ liệu đang được sử dụng.";
+        }
+        catch (IOException)
+        {
+            message = "Không thể lưu dữ liệu. Vui lòng thử lại.";
+        }
+        catch (UnauthorizedAccessException)
+        {
+            message = "Không thể ghi dữ liệu cửa hàng.";
+        }
     }
 }
 
@@ -43,10 +59,41 @@
 
 
 @code {
-private IReadOnlyList<Customer> ReadCustomers(){using var db=DbFactory.CreateDbContext();return db.Customers.AsNoTracking().OrderBy(x=>x.Id).ToArray();}
-private bool DeleteCustomer(int id){if(!HasPermission(Permissions.Admin)||!HasPermission(Permissions.Customers))return false;using var db=DbFactory.CreateDbContext();if(db.Orders.Any(x=>x.CustomerId==id)||db.Users.Any(x=>x.CustomerId==id)||db.Accounts.Any(x=>x.CustomerId==id))return false;var item=db.Customers.Find(id);if(item is null)return false;db.Customers.Remove(item);db.SaveChanges();return true;}
-[CascadingParameter] private Task<AuthenticationState> CurrentAuth {get;set;}=null!;
-private bool HasPermission(string permission){var user=CurrentAuth.GetAwaiter().GetResult().User;var id=user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;if(id is null)return false;using var db=DbFactory.CreateDbContext();return db.Users.Any(x=>x.Id==id&&!x.IsDisabled)&&(from ur in db.UserRoles join rc in db.RoleClaims on ur.RoleId equals rc.RoleId where ur.UserId==id&&rc.ClaimType=="Permission"&&rc.ClaimValue==permission select rc.Id).Any();}
+    private IReadOnlyList<Customer> ReadCustomers()
+    {
+        using var db = DbFactory.CreateDbContext();
+        return db.Customers.AsNoTracking().OrderBy(x => x.Id).ToArray();
+    }
+
+    private bool DeleteCustomer(int id)
+    {
+        if (!HasPermission(Permissions.Admin) || !HasPermission(Permissions.Customers))
+            return false;
+        using var db = DbFactory.CreateDbContext();
+        if (db.Orders.Any(x => x.CustomerId == id) || db.Users.Any(x => x.CustomerId == id) || db.Accounts.Any(x => x.CustomerId == id))
+            return false;
+        var item = db.Customers.Find(id);
+        if (item is null)
+            return false;
+        db.Customers.Remove(item);
+        db.SaveChanges();
+        return true;
+    }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> CurrentAuth { get; set; } = null!;
+
+    private bool HasPermission(string permission)
+    {
+        var user = CurrentAuth.GetAwaiter().GetResult().User;
+        var id = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (id is null)
+            return false;
+        using var db = DbFactory.CreateDbContext();
+        return db.Users.Any(x => x.Id == id && !x.IsDisabled) && (
+            from ur in db.UserRoles
+            join rc in db.RoleClaims on ur.RoleId equals rc.RoleId
+            where ur.UserId == id && rc.ClaimType == "Permission" && rc.ClaimValue == permission
+            select rc.Id).Any();
+    }
 }
-
-

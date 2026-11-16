@@ -1,4 +1,4 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 @inject NavigationManager Navigation
 @inject NotificationStore Notifications
 @inject CartStore Basket
@@ -36,17 +36,29 @@
 <BlazorError />
 @code {
     private string SearchQuery => Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(Navigation.Uri).Query).TryGetValue("Search", out var value) ? value.ToString() : "";
+
     private IReadOnlyList<Category> categories = [];
-    protected override void OnInitialized() {
+    protected override void OnInitialized()
+    {
         using var db = DbFactory.CreateDbContext();
         categories = db.Categories.AsNoTracking().OrderBy(x => x.Name).ToArray();
         Notifications.Changed += Update;
         Basket.Changed += Update;
     }
-    protected override async Task OnAfterRenderAsync(bool firstRender) { if (firstRender) { await Basket.LoadAsync(); await InvokeAsync(StateHasChanged); } }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Basket.LoadAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
     private void Update() => _ = InvokeAsync(StateHasChanged);
-    public void Dispose() { Notifications.Changed -= Update; Basket.Changed -= Update; }
+    public void Dispose()
+    {
+        Notifications.Changed -= Update;
+        Basket.Changed -= Update;
+    }
 }
-
-
-

@@ -1,8 +1,6 @@
-﻿@inject AdminFeedback Feedback
+@inject AdminFeedback Feedback
 @if (!string.IsNullOrEmpty(message)) { <div class="alert alert-success" role="status">@message</div> }
 @code {
     private string? message;
     protected override void OnInitialized() => message = Feedback.Take();
 }
-
-
