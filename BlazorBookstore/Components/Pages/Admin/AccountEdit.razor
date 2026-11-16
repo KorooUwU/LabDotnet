@@ -5,20 +5,30 @@
 @inject AuthenticationStateProvider Auth
 @inject IAuthorizationService Authorization
 @inject NavigationManager Navigation
-
 <PageTitle>Chỉnh sửa tài khoản</PageTitle>
 <section class="admin-page">
-    <div class="page-heading"><h1>Chỉnh sửa tài khoản</h1><a href="/Admin/Accounts" class="btn btn-outline-dark">Về danh sách tài khoản</a></div>
-    @if (account is null) { <p>Không tìm thấy tài khoản.</p> }
-    else {
+    <div class="page-heading">
+        <h1>Chỉnh sửa tài khoản</h1>
+        <a href="/Admin/Accounts" class="btn btn-outline-dark">Về danh sách tài khoản</a>
+    </div>
+    @if (account is null)
+    {
+        <p>Không tìm thấy tài khoản.</p>
+    }
+    else
+    {
         <p><strong>@account.UserName</strong> — @account.FullName · @account.Email</p>
-        @if (message is not null) { <p class="alert @(success ? "alert-success" : "alert-danger")" role="status">@message</p> }
+        @if (message is not null)
+        {
+            <p class="alert @(success ? "alert-success" : "alert-danger")" role="status">@message</p>
+        }
         <div class="account-edit-grid">
             <form @onsubmit="SaveRoles" @onsubmit:preventDefault class="admin-panel admin-form">
                 <h2>Quyền truy cập</h2>
                 <p>Chọn vai trò cho tài khoản. Quyền của từng vai trò được liệt kê bên dưới.</p>
                 <fieldset disabled="@busy">
-                    @foreach (var role in availableRoles) {
+                    @foreach (var role in availableRoles)
+                    {
                         <label class="account-role-option">
                             <input type="checkbox" name="selectedRoles" value="@role.Name" checked="@selectedRoles.Contains(role.Name!)" @onchange="e => Toggle(role.Name!, e)" />
                             <span><strong>@role.Name</strong><small>@(rolePermissions.GetValueOrDefault(role.Id, []).Length == 0 ? "Mua sách và xem đơn hàng của mình." : string.Join(" · ", rolePermissions[role.Id]))</small></span>
@@ -34,15 +44,22 @@
                 <h2>Đặt lại mật khẩu</h2>
                 <ValidationSummary class="text-danger" />
                 <p>Nhập mật khẩu mới từ 6 đến 200 ký tự. Tài khoản cần đăng nhập lại sau khi đổi.</p>
-                <div><label for="new-password">Mật khẩu mới</label><InputText id="new-password" type="password" @bind-Value="passwordInput.NewPassword" class="form-control" autocomplete="new-password" minlength="6" maxlength="200" disabled="@busy" /></div>
-                <div><label for="confirm-password">Nhập lại mật khẩu mới</label><InputText id="confirm-password" type="password" @bind-Value="passwordInput.ConfirmPassword" class="form-control" autocomplete="new-password" minlength="6" maxlength="200" disabled="@busy" /></div>
+                <div>
+                    <label for="new-password">Mật khẩu mới</label>
+                    <InputText id="new-password" type="password" @bind-Value="passwordInput.NewPassword" class="form-control" autocomplete="new-password" minlength="6" maxlength="200" disabled="@busy" />
+                </div>
+                <div>
+                    <label for="confirm-password">Nhập lại mật khẩu mới</label>
+                    <InputText id="confirm-password" type="password" @bind-Value="passwordInput.ConfirmPassword" class="form-control" autocomplete="new-password" minlength="6" maxlength="200" disabled="@busy" />
+                </div>
                 <button class="btn btn-dark" disabled="@busy">Đặt lại mật khẩu</button>
             </EditForm>
         </div>
     }
 </section>
 
-@code {
+@code
+{
     [SupplyParameterFromQuery]
     public string? Id { get; set; }
 

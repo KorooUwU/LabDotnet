@@ -5,10 +5,39 @@
 @inject CartStore Basket
 @inject NavigationManager Nav
 <PageTitle>Thanh toán</PageTitle>
-<section class="info-page"><h1>Xác nhận đơn hàng</h1>
-@if(message is not null){<p class="alert alert-danger" role="alert">@message</p>}
-@if(loaded){<p>Tổng tiền: <strong>@total.ToString("N0")đ</strong> · Miễn phí giao hàng</p><EditForm Model="input" OnValidSubmit="Save" FormName="Checkout" class="login-panel"><DataAnnotationsValidator/><ValidationSummary/><label>Địa chỉ nhận hàng<InputText @bind-Value="input.Address" class="form-control"/></label><label>Ghi chú<InputTextArea @bind-Value="input.Note" class="form-control"/></label><p>Thanh toán khi nhận hàng (COD). Bạn trả tiền cho đơn vị giao hàng khi nhận sách.</p><button class="btn btn-dark" disabled="@saving">Xác nhận đặt hàng</button></EditForm>}else{<p>Đang tải giỏ hàng…</p>}<a href="/Cart">Về giỏ hàng</a></section>
-@code {
+<section class="info-page">
+    <h1>Xác nhận đơn hàng</h1>
+    @if (message is not null)
+    {
+        <p class="alert alert-danger" role="alert">@message</p>
+    }
+    @if (loaded)
+    {
+        <p>Tổng tiền: <strong>@total.ToString("N0")đ</strong> · Miễn phí giao hàng</p>
+        <EditForm Model="input" OnValidSubmit="Save" FormName="Checkout" class="login-panel">
+            <DataAnnotationsValidator/>
+            <ValidationSummary/>
+            <label>
+                Địa chỉ nhận hàng
+                <InputText @bind-Value="input.Address" class="form-control"/>
+            </label>
+            <label>
+                Ghi chú
+                <InputTextArea @bind-Value="input.Note" class="form-control"/>
+            </label>
+            <p>Thanh toán khi nhận hàng (COD). Bạn trả tiền cho đơn vị giao hàng khi nhận sách.</p>
+            <button class="btn btn-dark" disabled="@saving">Xác nhận đặt hàng</button>
+        </EditForm>
+    }
+    else
+    {
+        <p>Đang tải giỏ hàng…</p>
+    }
+    <a href="/Cart">Về giỏ hàng</a>
+</section>
+
+@code
+{
     private CheckoutInput input = new()
     {
         Token = Guid.NewGuid().ToString("N")

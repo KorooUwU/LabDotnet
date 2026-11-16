@@ -4,18 +4,90 @@
 @inject NavigationManager Navigation
 @inject AdminFeedback Feedback
 <PageTitle>Thông tin đơn hàng - Mộc Books</PageTitle>
-<section class="admin-page"><p class="eyebrow">MỘC BOOKS / QUẢN TRỊ</p><h1>@(Id is null ? "Thêm đơn hàng" : $"Sửa đơn hàng #{Id}")</h1><AdminNav />
-@if (missing) { <p role="alert">Không tìm thấy đơn hàng.</p><a href="/Admin/Orders">Quay lại danh sách</a> } else {
-<EditForm Model="input" OnValidSubmit="Save" FormName="OrderEdit" class="admin-panel admin-form" novalidate><DataAnnotationsValidator /><ValidationSummary class="text-danger" />
-@if (error is not null) { <p class="alert alert-danger" role="alert">@error</p> }
-<div><label for="order-customer">Khách hàng</label><InputSelect id="order-customer" class="form-select" @bind-Value="input.CustomerId"><option value="0">Chọn khách hàng</option>@foreach (var customer in ReadCustomers()) { <option value="@customer.Id">@customer.Name — @customer.Email</option> }</InputSelect></div>
-<div><label for="order-address">Địa chỉ giao hàng</label><InputTextArea id="order-address" class="form-control" @bind-Value="input.Address" /></div>
-<div><label for="order-status">Trạng thái</label><InputSelect id="order-status" class="form-select" @bind-Value="input.Status">@foreach (var value in OrderStatuses.All) { <option value="@value.Key">@value.Value</option> }</InputSelect></div>
-<div><label for="order-note">Ghi chú</label><InputTextArea id="order-note" class="form-control" @bind-Value="input.Note" /></div>
-<div class="order-product-picker"><label for="order-product">Thêm sách</label><select id="order-product" class="form-select" @bind="productId"><option value="0">Chọn sách</option>@foreach (var product in ReadProducts()) { <option value="@product.Id">@product.Name — @product.Price.ToString("N0")đ</option> }</select><button class="btn btn-outline-dark" type="button" @onclick="AddLine">Thêm vào đơn</button></div>
-@foreach (var line in lines) { <div class="order-edit-line" @key="line"><div><strong>@line.ProductName</strong><small>@line.UnitPrice.ToString("N0")đ / sách</small></div><div><label>Số lượng<InputNumber class="form-control" @bind-Value="line.Quantity" min="1" max="999" /></label></div><strong>@((line.Quantity * line.UnitPrice).ToString("N0"))đ</strong><button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => lines.Remove(line)">Bỏ</button></div> }
-<strong>Tổng tiền: @lines.Sum(x => x.Quantity * x.UnitPrice).ToString("N0")đ</strong><div class="admin-actions"><button class="btn btn-dark" type="submit">Lưu đơn hàng</button><a class="btn btn-outline-dark" href="/Admin/Orders">Hủy</a></div></EditForm> }</section>
-@code {
+<section class="admin-page">
+    <p class="eyebrow">MỘC BOOKS / QUẢN TRỊ</p>
+    <h1>@(Id is null ? "Thêm đơn hàng" : $"Sửa đơn hàng #{Id}")</h1>
+    <AdminNav />
+    @if (missing)
+    {
+        <p role="alert">Không tìm thấy đơn hàng.</p>
+        <a href="/Admin/Orders">Quay lại danh sách</a>
+    }
+    else
+    {
+        <EditForm Model="input" OnValidSubmit="Save" FormName="OrderEdit" class="admin-panel admin-form" novalidate>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+            @if (error is not null)
+            {
+                <p class="alert alert-danger" role="alert">@error</p>
+            }
+            <div>
+                <label for="order-customer">Khách hàng</label>
+                <InputSelect id="order-customer" class="form-select" @bind-Value="input.CustomerId">
+                    <option value="0">Chọn khách hàng</option>
+                    @foreach (var customer in ReadCustomers())
+                    {
+                        <option value="@customer.Id">@customer.Name — @customer.Email</option>
+                    }
+                </InputSelect>
+            </div>
+            <div>
+                <label for="order-address">Địa chỉ giao hàng</label>
+                <InputTextArea id="order-address" class="form-control" @bind-Value="input.Address" />
+            </div>
+            <div>
+                <label for="order-status">Trạng thái</label>
+                <InputSelect id="order-status" class="form-select" @bind-Value="input.Status">
+                    @foreach (var value in OrderStatuses.All)
+                    {
+                        <option value="@value.Key">@value.Value</option>
+                    }
+                </InputSelect>
+            </div>
+            <div>
+                <label for="order-note">Ghi chú</label>
+                <InputTextArea id="order-note" class="form-control" @bind-Value="input.Note" />
+            </div>
+            <div class="order-product-picker">
+                <label for="order-product">Thêm sách</label>
+                <select id="order-product" class="form-select" @bind="productId">
+                    <option value="0">Chọn sách</option>
+                    @foreach (var product in ReadProducts())
+                    {
+                        <option value="@product.Id">@product.Name — @product.Price.ToString("N0")đ</option>
+                    }
+                </select>
+                <button class="btn btn-outline-dark" type="button" @onclick="AddLine">Thêm vào đơn</button>
+            </div>
+            @foreach (var line in lines)
+            {
+                <div class="order-edit-line" @key="line">
+                    <div>
+                        <strong>@line.ProductName</strong>
+                        <small>@line.UnitPrice.ToString("N0")đ / sách</small>
+                    </div>
+                    <div>
+                        <label>
+                            Số lượng
+                            <InputNumber class="form-control" @bind-Value="line.Quantity" min="1" max="999" />
+                        </label>
+                    </div>
+                    <strong>@((line.Quantity * line.UnitPrice).ToString("N0"))đ</strong>
+                    <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => lines.Remove(line)">Bỏ</button>
+                </div>
+            }
+            <strong>Tổng tiền: @lines.Sum(x => x.Quantity * x.UnitPrice).ToString("N0")đ</strong>
+            <div class="admin-actions">
+                <button class="btn btn-dark" type="submit">Lưu đơn hàng</button>
+                <a class="btn btn-outline-dark" href="/Admin/Orders">Hủy</a>
+            </div>
+        </EditForm>
+    }
+</section>
+
+@code
+{
     [SupplyParameterFromQuery]
     public int? Id { get; set; }
 
@@ -115,8 +187,8 @@
     }
 }
 
-
-@code {
+@code
+{
     private IReadOnlyList<Product> ReadProducts()
     {
         using var db = DbFactory.CreateDbContext();

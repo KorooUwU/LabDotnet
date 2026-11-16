@@ -5,23 +5,107 @@
 @inject AdminFeedback Feedback
 @inject ProductImageStore Images
 <PageTitle>Thông tin sách - Mộc Books</PageTitle>
-<section class="admin-page"><p class="eyebrow">MỘC BOOKS / QUẢN TRỊ</p><h1>@(input.Id == 0 ? "Thêm sách" : "Sửa sách")</h1><AdminNav />
-@if (missing) { <p role="alert">Không tìm thấy sách.</p><a href="/Admin/Products">Quay lại danh sách</a> } else {
-<EditForm Model="input" OnValidSubmit="Save" FormName="ProductEdit" class="admin-panel admin-form"><DataAnnotationsValidator /><ValidationSummary class="text-danger" /><p class="text-danger" role="alert">@error</p>
-<div><label for="Name" class="form-label">Tên sách</label><InputText id="Name" @bind-Value="input.Name" class="form-control" /><ValidationMessage For="() => input.Name" class="text-danger" /></div>
-<div><label for="Author" class="form-label">Tác giả</label><InputText id="Author" @bind-Value="input.Author" class="form-control" /><ValidationMessage For="() => input.Author" class="text-danger" /></div>
-<div><label for="Publisher" class="form-label">Nhà xuất bản</label><InputText id="Publisher" @bind-Value="input.Publisher" class="form-control" /><ValidationMessage For="() => input.Publisher" class="text-danger" /></div>
-<div><label for="PublicationYear" class="form-label">Năm xuất bản</label><InputNumber id="PublicationYear" @bind-Value="input.PublicationYear" class="form-control" /><ValidationMessage For="() => input.PublicationYear" class="text-danger" /></div>
-<div><label for="Isbn" class="form-label">ISBN (không bắt buộc)</label><InputText id="Isbn" @bind-Value="input.Isbn" class="form-control" /><ValidationMessage For="() => input.Isbn" class="text-danger" /></div>
-<div><label for="PageCount" class="form-label">Số trang</label><InputNumber id="PageCount" @bind-Value="input.PageCount" class="form-control" /><ValidationMessage For="() => input.PageCount" class="text-danger" /></div>
-<div><label for="Description" class="form-label">Mô tả</label><InputTextArea id="Description" @bind-Value="input.Description" class="form-control" rows="3" /><ValidationMessage For="() => input.Description" class="text-danger" /></div>
-<div><label for="CategoryId">Danh mục</label><InputSelect id="CategoryId" @bind-Value="input.CategoryId" class="form-select"><option value="0">Chọn danh mục</option>@foreach(var category in ReadCategories()){<option value="@category.Id">@category.Name</option>}</InputSelect></div>
-<div><label for="Price" class="form-label">Giá bán (đ)</label><InputNumber id="Price" @bind-Value="input.Price" class="form-control" min="1" max="1000000000" step="1" /><ValidationMessage For="() => input.Price" class="text-danger" /></div>
-<div><label for="product-file" class="form-label">Ảnh bìa sách</label><InputFile id="product-file" OnChange="SelectImage" accept="image/jpeg,image/png,image/webp" class="form-control" disabled="@uploading" /><small class="text-muted">JPG, PNG hoặc WebP, tối đa 2 MB. Ảnh được lưu khi bấm Lưu sách.</small>@if (uploading) { <p role="status">Đang đọc ảnh…</p> }@if (preview is not null) { <div class="product-upload-preview"><img src="@preview" alt="Xem trước ảnh sách" /><button type="button" class="btn btn-sm btn-outline-danger" @onclick="RemoveImage" disabled="@uploading">Bỏ ảnh</button></div> }</div>
-<div><label for="ColorClass" class="form-label">Màu nền</label><InputSelect id="ColorClass" @bind-Value="input.ColorClass" class="form-select"><option value="clay">Đất nung</option><option value="amber">Hổ phách</option><option value="sage">Xanh lá</option><option value="terracotta">Cam đất</option></InputSelect><ValidationMessage For="() => input.ColorClass" class="text-danger" /></div>
-<div class="admin-actions"><button class="btn btn-dark" type="submit" disabled="@uploading">Lưu sách</button><a class="btn btn-outline-dark" href="/Admin/Products">Hủy</a></div></EditForm>
-}</section>
-@code {
+<section class="admin-page">
+    <p class="eyebrow">MỘC BOOKS / QUẢN TRỊ</p>
+    <h1>@(input.Id == 0 ? "Thêm sách" : "Sửa sách")</h1>
+    <AdminNav />
+    @if (missing)
+    {
+        <p role="alert">Không tìm thấy sách.</p>
+        <a href="/Admin/Products">Quay lại danh sách</a>
+    }
+    else
+    {
+        <EditForm Model="input" OnValidSubmit="Save" FormName="ProductEdit" class="admin-panel admin-form">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+            <p class="text-danger" role="alert">@error</p>
+            <div>
+                <label for="Name" class="form-label">Tên sách</label>
+                <InputText id="Name" @bind-Value="input.Name" class="form-control" />
+                <ValidationMessage For="() => input.Name" class="text-danger" />
+            </div>
+            <div>
+                <label for="Author" class="form-label">Tác giả</label>
+                <InputText id="Author" @bind-Value="input.Author" class="form-control" />
+                <ValidationMessage For="() => input.Author" class="text-danger" />
+            </div>
+            <div>
+                <label for="Publisher" class="form-label">Nhà xuất bản</label>
+                <InputText id="Publisher" @bind-Value="input.Publisher" class="form-control" />
+                <ValidationMessage For="() => input.Publisher" class="text-danger" />
+            </div>
+            <div>
+                <label for="PublicationYear" class="form-label">Năm xuất bản</label>
+                <InputNumber id="PublicationYear" @bind-Value="input.PublicationYear" class="form-control" />
+                <ValidationMessage For="() => input.PublicationYear" class="text-danger" />
+            </div>
+            <div>
+                <label for="Isbn" class="form-label">ISBN (không bắt buộc)</label>
+                <InputText id="Isbn" @bind-Value="input.Isbn" class="form-control" />
+                <ValidationMessage For="() => input.Isbn" class="text-danger" />
+            </div>
+            <div>
+                <label for="PageCount" class="form-label">Số trang</label>
+                <InputNumber id="PageCount" @bind-Value="input.PageCount" class="form-control" />
+                <ValidationMessage For="() => input.PageCount" class="text-danger" />
+            </div>
+            <div>
+                <label for="Description" class="form-label">Mô tả</label>
+                <InputTextArea id="Description" @bind-Value="input.Description" class="form-control" rows="3" />
+                <ValidationMessage For="() => input.Description" class="text-danger" />
+            </div>
+            <div>
+                <label for="CategoryId">Danh mục</label>
+                <InputSelect id="CategoryId" @bind-Value="input.CategoryId" class="form-select">
+                    <option value="0">Chọn danh mục</option>
+                    @foreach (var category in ReadCategories())
+                    {
+                        <option value="@category.Id">@category.Name</option>
+                    }
+                </InputSelect>
+            </div>
+            <div>
+                <label for="Price" class="form-label">Giá bán (đ)</label>
+                <InputNumber id="Price" @bind-Value="input.Price" class="form-control" min="1" max="1000000000" step="1" />
+                <ValidationMessage For="() => input.Price" class="text-danger" />
+            </div>
+            <div>
+                <label for="product-file" class="form-label">Ảnh bìa sách</label>
+                <InputFile id="product-file" OnChange="SelectImage" accept="image/jpeg,image/png,image/webp" class="form-control" disabled="@uploading" />
+                <small class="text-muted">JPG, PNG hoặc WebP, tối đa 2 MB. Ảnh được lưu khi bấm Lưu sách.</small>
+                @if (uploading)
+                {
+                    <p role="status">Đang đọc ảnh…</p>
+                }
+                @if (preview is not null)
+                {
+                    <div class="product-upload-preview">
+                        <img src="@preview" alt="Xem trước ảnh sách" />
+                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="RemoveImage" disabled="@uploading">Bỏ ảnh</button>
+                    </div>
+                }
+            </div>
+            <div>
+                <label for="ColorClass" class="form-label">Màu nền</label>
+                <InputSelect id="ColorClass" @bind-Value="input.ColorClass" class="form-select">
+                    <option value="clay">Đất nung</option>
+                    <option value="amber">Hổ phách</option>
+                    <option value="sage">Xanh lá</option>
+                    <option value="terracotta">Cam đất</option>
+                </InputSelect>
+                <ValidationMessage For="() => input.ColorClass" class="text-danger" />
+            </div>
+            <div class="admin-actions">
+                <button class="btn btn-dark" type="submit" disabled="@uploading">Lưu sách</button>
+                <a class="btn btn-outline-dark" href="/Admin/Products">Hủy</a>
+            </div>
+        </EditForm>
+    }
+</section>
+
+@code
+{
     [SupplyParameterFromQuery(Name = "id")]
     public int? Id { get; set; }
 
@@ -175,13 +259,8 @@
     }
 }
 
-
-
-
-
-
-
-@code {
+@code
+{
     private IReadOnlyList<Category> ReadCategories()
     {
         using var db = DbFactory.CreateDbContext();

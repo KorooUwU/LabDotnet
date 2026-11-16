@@ -4,16 +4,51 @@
 @inject NavigationManager Navigation
 @inject AdminFeedback Feedback
 <PageTitle>Thông tin khách hàng - Mộc Books</PageTitle>
-<section class="admin-page"><p class="eyebrow">MỘC BOOKS / QUẢN TRỊ</p><h1>@(input.Id == 0 ? "Thêm khách hàng" : "Sửa khách hàng")</h1><AdminNav />
-@if (missing) { <p role="alert">Không tìm thấy khách hàng.</p><a href="/Admin/Customers">Quay lại danh sách</a> } else {
-<EditForm Model="input" OnValidSubmit="Save" FormName="CustomerEdit" class="admin-panel admin-form"><DataAnnotationsValidator /><ValidationSummary class="text-danger" /><p class="text-danger" role="alert">@error</p>
-<div><label for="Name" class="form-label">Họ và tên</label><InputText id="Name" @bind-Value="input.Name" class="form-control" /><ValidationMessage For="() => input.Name" class="text-danger" /></div>
-<div><label for="Email" class="form-label">Email</label><InputText id="Email" @bind-Value="input.Email" class="form-control" type="email" /><ValidationMessage For="() => input.Email" class="text-danger" /></div>
-<div><label for="Phone" class="form-label">Điện thoại</label><InputText id="Phone" @bind-Value="input.Phone" class="form-control" type="tel" /><ValidationMessage For="() => input.Phone" class="text-danger" /></div>
-<div><label for="Address" class="form-label">Địa chỉ</label><InputTextArea id="Address" @bind-Value="input.Address" class="form-control" rows="3" /><ValidationMessage For="() => input.Address" class="text-danger" /></div>
-<div class="admin-actions"><button class="btn btn-dark" type="submit">Lưu khách hàng</button><a class="btn btn-outline-dark" href="/Admin/Customers">Hủy</a></div></EditForm>
-}</section>
-@code {
+<section class="admin-page">
+    <p class="eyebrow">MỘC BOOKS / QUẢN TRỊ</p>
+    <h1>@(input.Id == 0 ? "Thêm khách hàng" : "Sửa khách hàng")</h1>
+    <AdminNav />
+    @if (missing)
+    {
+        <p role="alert">Không tìm thấy khách hàng.</p>
+        <a href="/Admin/Customers">Quay lại danh sách</a>
+    }
+    else
+    {
+        <EditForm Model="input" OnValidSubmit="Save" FormName="CustomerEdit" class="admin-panel admin-form">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+            <p class="text-danger" role="alert">@error</p>
+            <div>
+                <label for="Name" class="form-label">Họ và tên</label>
+                <InputText id="Name" @bind-Value="input.Name" class="form-control" />
+                <ValidationMessage For="() => input.Name" class="text-danger" />
+            </div>
+            <div>
+                <label for="Email" class="form-label">Email</label>
+                <InputText id="Email" @bind-Value="input.Email" class="form-control" type="email" />
+                <ValidationMessage For="() => input.Email" class="text-danger" />
+            </div>
+            <div>
+                <label for="Phone" class="form-label">Điện thoại</label>
+                <InputText id="Phone" @bind-Value="input.Phone" class="form-control" type="tel" />
+                <ValidationMessage For="() => input.Phone" class="text-danger" />
+            </div>
+            <div>
+                <label for="Address" class="form-label">Địa chỉ</label>
+                <InputTextArea id="Address" @bind-Value="input.Address" class="form-control" rows="3" />
+                <ValidationMessage For="() => input.Address" class="text-danger" />
+            </div>
+            <div class="admin-actions">
+                <button class="btn btn-dark" type="submit">Lưu khách hàng</button>
+                <a class="btn btn-outline-dark" href="/Admin/Customers">Hủy</a>
+            </div>
+        </EditForm>
+    }
+</section>
+
+@code
+{
     [SupplyParameterFromQuery(Name = "id")]
     public int? Id { get; set; }
 
@@ -73,9 +108,8 @@
     }
 }
 
-
-
-@code {
+@code
+{
     private IReadOnlyList<Customer> ReadCustomers()
     {
         using var db = DbFactory.CreateDbContext();

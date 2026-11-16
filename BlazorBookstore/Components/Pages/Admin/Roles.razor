@@ -5,14 +5,55 @@
 @inject AuthenticationStateProvider Auth
 @inject IAuthorizationService Authorization
 <PageTitle>Vai trò và phân quyền</PageTitle>
-<section class="admin-page"><h1>Vai trò và phân quyền</h1><p><a href="/Admin/Accounts">Quản lý tài khoản và mật khẩu</a></p><AdminNav/>
-@if(message is not null){<p class="alert alert-info" role="status">@message</p>}
-<form @onsubmit="Create" @onsubmit:preventDefault class="admin-panel admin-toolbar"><label>Tên vai trò<input @bind="newName" required maxlength="50" class="form-control"/></label><button class="btn btn-dark">Tạo vai trò</button></form>
-<p>Vai trò quản trị cần Admin.Access cộng thêm quyền của từng chức năng.</p>
-@foreach(var role in roleList){<article class="admin-panel my-3"><h2>@role.Name</h2>@foreach(var permission in Permissions.All){<label class="d-block"><input type="checkbox" checked="@roleSelections[role.Id].Contains(permission)" disabled="@(role.Name=="Admin")" @onchange="e=>Toggle(roleSelections[role.Id],permission,e)"/> @permission</label>}<button class="btn btn-dark mt-3" disabled="@(role.Name=="Admin")" @onclick="()=>SavePermissions(role.Id)">Lưu quyền</button></article>}
-<h2>Gán vai trò cho tài khoản</h2>
-@foreach(var user in accounts){<article class="admin-panel my-3"><strong>@user.UserName — @user.FullName</strong>@foreach(var role in roleList){<label class="d-block"><input type="checkbox" checked="@userSelections[user.Id].Contains(role.Name!)" @onchange="e=>Toggle(userSelections[user.Id],role.Name!,e)"/> @role.Name</label>}<button class="btn btn-dark mt-3" @onclick="()=>SaveUser(user.Id)">Lưu vai trò</button></article>}</section>
-@code{
+<section class="admin-page">
+    <h1>Vai trò và phân quyền</h1>
+    <p><a href="/Admin/Accounts">Quản lý tài khoản và mật khẩu</a></p>
+    <AdminNav/>
+    @if (message is not null)
+    {
+        <p class="alert alert-info" role="status">@message</p>
+    }
+    <form @onsubmit="Create" @onsubmit:preventDefault class="admin-panel admin-toolbar">
+        <label>
+            Tên vai trò
+            <input @bind="newName" required maxlength="50" class="form-control"/>
+        </label>
+        <button class="btn btn-dark">Tạo vai trò</button>
+    </form>
+    <p>Vai trò quản trị cần Admin.Access cộng thêm quyền của từng chức năng.</p>
+    @foreach (var role in roleList)
+    {
+        <article class="admin-panel my-3">
+            <h2>@role.Name</h2>
+            @foreach (var permission in Permissions.All)
+            {
+                <label class="d-block">
+                    <input type="checkbox" checked="@roleSelections[role.Id].Contains(permission)" disabled="@(role.Name=="Admin")" @onchange="e=>Toggle(roleSelections[role.Id],permission,e)"/>
+                    @permission
+                </label>
+            }
+            <button class="btn btn-dark mt-3" disabled="@(role.Name=="Admin")" @onclick="()=>SavePermissions(role.Id)">Lưu quyền</button>
+        </article>
+    }
+    <h2>Gán vai trò cho tài khoản</h2>
+    @foreach (var user in accounts)
+    {
+        <article class="admin-panel my-3">
+            <strong>@user.UserName — @user.FullName</strong>
+            @foreach (var role in roleList)
+            {
+                <label class="d-block">
+                    <input type="checkbox" checked="@userSelections[user.Id].Contains(role.Name!)" @onchange="e=>Toggle(userSelections[user.Id],role.Name!,e)"/>
+                    @role.Name
+                </label>
+            }
+            <button class="btn btn-dark mt-3" @onclick="()=>SaveUser(user.Id)">Lưu vai trò</button>
+        </article>
+    }
+</section>
+
+@code
+{
     private string newName = "";
     private string? message;
     private List<IdentityRole> roleList = [];

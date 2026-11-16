@@ -7,6 +7,7 @@ using MvcBookstore.Models;
 namespace MvcBookstore.Controllers;
 public class HomeController(AppDbContext db) : Controller
 {
+    // GET: /
     [HttpGet("/"), HttpGet("/Index")]
     public async Task<IActionResult> Index(string? search, string? category)
     {
@@ -23,6 +24,7 @@ public class HomeController(AppDbContext db) : Controller
             });
     }
 
+    // GET: /Books/{id}
     [HttpGet("/Books/{id:int}")]
     public async Task<IActionResult> BookDetails(int id)
     {
