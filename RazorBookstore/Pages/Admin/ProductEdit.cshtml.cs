@@ -12,7 +12,17 @@ public class ProductEditModel(AppDbContext db, IWebHostEnvironment env) : PageMo
     [BindProperty] public bool RemoveImage { get; set; }
     public List<Category> Categories => db.Categories.AsNoTracking().ToList();
     public string? Preview { get; set; }
-    public async Task<IActionResult> OnGetAsync(int id = 0) { if (id == 0) return Page(); var x = await db.Products.FindAsync(id); if (x is null) return NotFound(); Input = new() { Id = x.Id, Name = x.Name, Description = x.Description, Category = x.Category, CategoryId = x.CategoryId ?? 0, Price = x.Price, Author = x.Author, Publisher = x.Publisher, PublicationYear = x.PublicationYear, Isbn = x.Isbn, PageCount = x.PageCount, ColorClass = x.ColorClass }; Preview = x.ImageUrl; return Page(); }
+    public async Task<IActionResult> OnGetAsync(int id = 0) 
+    { if (id == 0) 
+        return Page(); 
+        
+        var x = await db.Products.FindAsync(id); 
+
+        if (x is null) return NotFound(); 
+
+        Input = new() { Id = x.Id, Name = x.Name, Description = x.Description, Category = x.Category, CategoryId = x.CategoryId ?? 0, Price = x.Price, Author = x.Author, Publisher = x.Publisher, PublicationYear = x.PublicationYear, Isbn = x.Isbn, PageCount = x.PageCount, ColorClass = x.ColorClass }; Preview = x.ImageUrl; 
+        return Page(); 
+    }
     public async Task<IActionResult> OnPostAsync()
     {
         var old = Input.Id == 0 ? null : await db.Products.AsNoTracking().FirstOrDefaultAsync(x => x.Id == Input.Id); if (Input.Id != 0 && old is null) return NotFound(); Preview = old?.ImageUrl;

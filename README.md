@@ -133,3 +133,13 @@ Giỏ Blazor lưu theo tab trình duyệt; Razor/MVC dùng Session trong bộ nh
 
 #   L a b D o t n e t  
  
+## Quản lý tài khoản và mật khẩu
+
+Đăng nhập admin rồi chọn **Quản lý tài khoản** ở sidebar hoặc mở `/Admin/Accounts` trong bất kỳ lab nào. Tìm theo tên đăng nhập, họ tên hoặc email, sau đó bấm **Sửa quyền / mật khẩu**.
+
+- **Quyền truy cập**: chọn một hay nhiều vai trò rồi bấm **Lưu quyền truy cập**. Mỗi vai trò hiển thị quyền đi kèm. Muốn chỉnh quyền của vai trò, mở `/Admin/Roles`.
+- **Đặt lại mật khẩu**: nhập mật khẩu mới (6–200 ký tự), nhập lại cho khớp rồi bấm **Đặt lại mật khẩu**. Đây là thao tác quản trị, không cần mật khẩu cũ; hệ thống không hiển thị mật khẩu hay hash đang lưu.
+- Hai form lưu độc lập: đổi quyền không bắt buộc đổi mật khẩu. Tài khoản bị chỉnh sửa phải đăng nhập lại; mật khẩu mới dùng chung cho cả ba lab. Blazor kiểm tra lại phiên trong tối đa 30 giây.
+- Chỉ tài khoản có cả `Admin.Access` và `Roles.Manage` được thao tác. Không được bỏ vai trò Admin của quản trị viên cuối cùng.
+
+Tính năng sử dụng các bảng Identity hiện có, **không cần tạo migration mới**. Xem `tests/accounts.cjs` để kiểm thử luồng quản lý tài khoản.

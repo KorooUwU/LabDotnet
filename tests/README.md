@@ -26,3 +26,11 @@ npm test
 Script kiểm tra truy cập công khai, bắt buộc đăng nhập admin, khách bị từ chối quyền quản trị, đăng ký Identity, giỏ hàng, thanh toán Razor/MVC, đơn hàng và tài khoản/danh mục dùng chung, và chặn xem đơn của người khác.
 
 Ngoài script, đã kiểm tra bằng trình duyệt: đặt đơn từ Blazor, CRUD sách/khách hàng/đơn/danh mục, upload ảnh dùng chung, tạo vai trò tùy chỉnh và thu hồi quyền giữa Razor và MVC.
+
+Kiểm thử riêng quản lý tài khoản (chỉ chạy trên database kiểm thử có duy nhất admin mẫu giữ vai trò Admin):
+
+```powershell
+npm run test:accounts
+```
+
+Bài kiểm thử tạo tài khoản riêng, kiểm tra đổi vai trò mà không cần nhập mật khẩu, đặt lại mật khẩu với xác nhận, mật khẩu cũ bị từ chối, mật khẩu mới dùng được ở lab khác, hủy phiên đăng nhập cũ và từ chối yêu cầu đặt lại mật khẩu từ khách/nhân viên không có quyền quản lý tài khoản. Cũng kiểm tra không thể hạ quyền quản trị viên cuối cùng.

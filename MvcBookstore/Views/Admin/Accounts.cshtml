@@ -1,0 +1,19 @@
+﻿@model AccountsModel
+@{ ViewData["Title"] = "Quản lý tài khoản"; }
+<section class="admin-page">
+    <div class="page-heading"><h1>Quản lý tài khoản</h1><a href="/Admin/Roles" class="btn btn-outline-dark">Vai trò và phân quyền</a></div>
+    <partial name="_Message" />
+    <form method="get" class="admin-toolbar">
+        <label class="visually-hidden" asp-for="Search">Tìm tài khoản</label>
+        <input asp-for="Search" class="form-control" placeholder="Tên đăng nhập, họ tên hoặc email" />
+        <button class="btn btn-dark">Tìm kiếm</button>
+    </form>
+    <div class="admin-panel table-responsive">
+        <table class="table align-middle"><thead><tr><th>Tên đăng nhập</th><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Thao tác</th></tr></thead>
+        <tbody>@foreach (var account in Model.Items) {
+            <tr><td>@account.UserName</td><td>@account.FullName</td><td>@account.Email</td><td>@string.Join(", ", Model.AccountRoles.GetValueOrDefault(account.Id, []))</td><td><a asp-controller="Admin" asp-action="AccountEdit" asp-route-id="@account.Id" class="btn btn-sm btn-outline-dark">Sửa quyền / mật khẩu</a></td></tr>
+        }</tbody></table>
+        @if (Model.Items.Count == 0) { <p>Không tìm thấy tài khoản phù hợp.</p> }
+    </div>
+</section>
+

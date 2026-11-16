@@ -1,7 +1,10 @@
 ﻿@page
 @model WebApplication1.Pages.Admin.ProductEditModel
 @{ViewData["Title"]="Thông tin sách";}
-<section class="admin-page"><h1>@(Model.Input.Id==0?"Thêm sách":"Sửa sách")</h1><form method="post" enctype="multipart/form-data" class="admin-panel admin-form"><div asp-validation-summary="All" class="text-danger"></div><input asp-for="Input.Id" type="hidden" />
+<section class="admin-page"><h1>@(Model.Input.Id==0?"Thêm sách":"Sửa sách")</h1>
+<form method="post" enctype="multipart/form-data" class="admin-panel admin-form">
+<div asp-validation-summary="All" class="text-danger"></div>
+<input asp-for="Input.Id" type="hidden" />
 <div><label asp-for="Input.Name">Tên sách</label><input asp-for="Input.Name" class="form-control" /><span asp-validation-for="Input.Name" class="text-danger"></span></div>
 <div><label asp-for="Input.Author">Tác giả</label><input asp-for="Input.Author" class="form-control" /><span asp-validation-for="Input.Author" class="text-danger"></span></div>
 <div><label asp-for="Input.Publisher">Nhà xuất bản</label><input asp-for="Input.Publisher" class="form-control" /><span asp-validation-for="Input.Publisher" class="text-danger"></span></div>

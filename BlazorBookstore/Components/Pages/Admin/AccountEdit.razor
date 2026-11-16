@@ -1,0 +1,149 @@
+﻿@page "/Admin/AccountEdit"
+@attribute [Authorize(Policy = Permissions.Roles)]
+@inject IServiceScopeFactory Scopes
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject AuthenticationStateProvider Auth
+@inject IAuthorizationService Authorization
+@inject NavigationManager Navigation
+
+<PageTitle>Chỉnh sửa tài khoản</PageTitle>
+<section class="admin-page">
+    <div class="page-heading"><h1>Chỉnh sửa tài khoản</h1><a href="/Admin/Accounts" class="btn btn-outline-dark">Về danh sách tài khoản</a></div>
+    @if (account is null) { <p>Không tìm thấy tài khoản.</p> }
+    else {
+        <p><strong>@account.UserName</strong> — @account.FullName · @account.Email</p>
+        @if (message is not null) { <p class="alert @(success ? "alert-success" : "alert-danger")" role="status">@message</p> }
+        <div class="account-edit-grid">
+            <form @onsubmit="SaveRoles" @onsubmit:preventDefault class="admin-panel admin-form">
+                <h2>Quyền truy cập</h2>
+                <p>Chọn vai trò cho tài khoản. Quyền của từng vai trò được liệt kê bên dưới.</p>
+                <fieldset disabled="@busy">
+                    @foreach (var role in availableRoles) {
+                        <label class="account-role-option">
+                            <input type="checkbox" name="selectedRoles" value="@role.Name" checked="@selectedRoles.Contains(role.Name!)" @onchange="e => Toggle(role.Name!, e)" />
+                            <span><strong>@role.Name</strong><small>@(rolePermissions.GetValueOrDefault(role.Id, []).Length == 0 ? "Mua sách và xem đơn hàng của mình." : string.Join(" · ", rolePermissions[role.Id]))</small></span>
+                        </label>
+                    }
+                </fieldset>
+                <p class="text-muted">Không được bỏ vai trò Admin của quản trị viên cuối cùng.</p>
+                <button class="btn btn-dark" disabled="@busy">Lưu quyền truy cập</button>
+                <a href="/Admin/Roles">Chỉnh quyền của từng vai trò</a>
+            </form>
+            <EditForm Model="passwordInput" OnValidSubmit="ResetPassword" FormName="AdminAccountPassword" class="admin-panel admin-form">
+                <DataAnnotationsValidator />
+                <h2>Đặt lại mật khẩu</h2>
+                <ValidationSummary class="text-danger" />
+                <p>Nhập mật khẩu mới từ 6 đến 200 ký tự. Tài khoản cần đăng nhập lại sau khi đổi.</p>
+                <div><label for="new-password">Mật khẩu mới</label><InputText id="new-password" type="password" @bind-Value="passwordInput.NewPassword" class="form-control" autocomplete="new-password" minlength="6" maxlength="200" disabled="@busy" /></div>
+                <div><label for="confirm-password">Nhập lại mật khẩu mới</label><InputText id="confirm-password" type="password" @bind-Value="passwordInput.ConfirmPassword" class="form-control" autocomplete="new-password" minlength="6" maxlength="200" disabled="@busy" /></div>
+                <button class="btn btn-dark" disabled="@busy">Đặt lại mật khẩu</button>
+            </EditForm>
+        </div>
+    }
+</section>
+
+@code {
+    [SupplyParameterFromQuery] public string? Id { get; set; }
+    private ApplicationUser? account;
+    private List<IdentityRole> availableRoles = [];
+    private Dictionary<string, string[]> rolePermissions = [];
+    private HashSet<string> selectedRoles = [];
+    private AdminPasswordInput passwordInput = new();
+    private string? message;
+    private bool success, busy;
+
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        account = await db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == Id);
+        if (account is null) return;
+        availableRoles = await db.Roles.AsNoTracking().OrderBy(x => x.Name).ToListAsync();
+        var claims = await db.RoleClaims.AsNoTracking().Where(x => x.ClaimType == "Permission").ToListAsync();
+        rolePermissions = claims.GroupBy(x => x.RoleId).ToDictionary(g => g.Key, g => g.Select(x => x.ClaimValue!).ToArray());
+        selectedRoles = (await (from ur in db.UserRoles join role in db.Roles on ur.RoleId equals role.Id
+                               where ur.UserId == account.Id select role.Name!).ToListAsync()).ToHashSet();
+        passwordInput = new() { UserId = account.Id };
+    }
+
+    private void Toggle(string name, ChangeEventArgs e)
+    {
+        if (e.Value is true) selectedRoles.Add(name); else selectedRoles.Remove(name);
+    }
+
+    private async Task<bool> Allowed()
+    {
+        var principal = (await Auth.GetAuthenticationStateAsync()).User;
+        return (await Authorization.AuthorizeAsync(principal, Permissions.Admin)).Succeeded
+            && (await Authorization.AuthorizeAsync(principal, Permissions.Roles)).Succeeded;
+    }
+
+    private bool Accept(IdentityResult result)
+    {
+        if (result.Succeeded) return true;
+        message = string.Join("; ", result.Errors.Select(x => x.Description));
+        return false;
+    }
+
+    private async Task SaveRoles()
+    {
+        if (busy || account is null) return;
+        busy = true; success = false; message = null;
+        try
+        {
+            if (!await Allowed()) { message = "Bạn không có quyền quản lý tài khoản."; return; }
+            var selection = selectedRoles.ToArray();
+            if (selection.Length == 0 || selection.Any(name => !availableRoles.Any(role => role.Name == name)))
+            { message = "Vui lòng chọn ít nhất một vai trò hợp lệ."; return; }
+
+            await using var scope = Scopes.CreateAsyncScope();
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var target = await users.FindByIdAsync(account.Id);
+            if (target is null) { message = "Tài khoản không còn tồn tại."; return; }
+            await using var transaction = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            var current = await users.GetRolesAsync(target);
+            if (current.Contains("Admin") && !selection.Contains("Admin")
+                && (await users.GetUsersInRoleAsync("Admin")).Count <= 1)
+            { message = "Không được bỏ vai trò của quản trị viên cuối cùng."; return; }
+            if (!Accept(await users.RemoveFromRolesAsync(target, current.Except(selection)))) return;
+            if (!Accept(await users.AddToRolesAsync(target, selection.Except(current)))) return;
+            if (!Accept(await users.UpdateSecurityStampAsync(target))) return;
+            await transaction.CommitAsync();
+            success = true;
+            message = "Đã cập nhật vai trò/quyền. Tài khoản vừa chỉnh sửa cần đăng nhập lại.";
+            if ((await Auth.GetAuthenticationStateAsync()).User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value == target.Id)
+                Navigation.NavigateTo("/Login", forceLoad: true);
+            else await LoadAsync();
+        }
+        finally { busy = false; }
+    }
+
+    private async Task ResetPassword()
+    {
+        if (busy || account is null) return;
+        busy = true; success = false; message = null;
+        try
+        {
+            if (!await Allowed()) { message = "Bạn không có quyền quản lý tài khoản."; return; }
+            var errors = new List<ValidationResult>();
+            if (!Validator.TryValidateObject(passwordInput, new ValidationContext(passwordInput), errors, true))
+            { message = string.Join(" ", errors.Select(x => x.ErrorMessage)); return; }
+            await using var scope = Scopes.CreateAsyncScope();
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var target = await users.FindByIdAsync(account.Id);
+            if (target is null) { message = "Tài khoản không còn tồn tại."; return; }
+            var token = await users.GeneratePasswordResetTokenAsync(target);
+            var result = await users.ResetPasswordAsync(target, token, passwordInput.NewPassword);
+            passwordInput = new() { UserId = account.Id };
+            if (!Accept(result)) return;
+            success = true;
+            message = "Đã đặt lại mật khẩu. Tài khoản vừa chỉnh sửa cần đăng nhập lại bằng mật khẩu mới.";
+            if ((await Auth.GetAuthenticationStateAsync()).User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value == target.Id)
+                Navigation.NavigateTo("/Login", forceLoad: true);
+        }
+        finally { busy = false; }
+    }
+}
+

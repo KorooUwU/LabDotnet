@@ -5,7 +5,7 @@
 @inject AuthenticationStateProvider Auth
 @inject IAuthorizationService Authorization
 <PageTitle>Vai trò và phân quyền</PageTitle>
-<section class="admin-page"><h1>Vai trò và phân quyền</h1><AdminNav/>
+<section class="admin-page"><h1>Vai trò và phân quyền</h1><p><a href="/Admin/Accounts">Quản lý tài khoản và mật khẩu</a></p><AdminNav/>
 @if(message is not null){<p class="alert alert-info" role="status">@message</p>}
 <form @onsubmit="Create" @onsubmit:preventDefault class="admin-panel admin-toolbar"><label>Tên vai trò<input @bind="newName" required maxlength="50" class="form-control"/></label><button class="btn btn-dark">Tạo vai trò</button></form>
 <p>Vai trò quản trị cần Admin.Access cộng thêm quyền của từng chức năng.</p>
@@ -25,4 +25,5 @@
  private async Task SaveUser(string userId){if(!await Allowed()){message="Bạn không có quyền.";return;}await using var scope=Scopes.CreateAsyncScope();var users=scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();var db=scope.ServiceProvider.GetRequiredService<AppDbContext>();var user=await users.FindByIdAsync(userId);if(user is null)return;var selected=userSelections[userId];if(selected.Count==0){message="Chọn ít nhất một vai trò.";return;}var current=await users.GetRolesAsync(user);if(current.Contains("Admin")&&!selected.Contains("Admin")&&(await users.GetUsersInRoleAsync("Admin")).Count<=1){message="Không được bỏ vai trò của quản trị viên cuối cùng.";return;}await using var tx=await db.Database.BeginTransactionAsync();Check(await users.RemoveFromRolesAsync(user,current.Except(selected)));Check(await users.AddToRolesAsync(user,selected.Except(current)));Check(await users.UpdateSecurityStampAsync(user));await tx.CommitAsync();message="Đã gán vai trò. Tài khoản bị ảnh hưởng cần đăng nhập lại.";await Load();}
  private static void Check(IdentityResult result){if(!result.Succeeded)throw new InvalidOperationException(string.Join("; ",result.Errors.Select(x=>x.Description)));}
 }
+
 

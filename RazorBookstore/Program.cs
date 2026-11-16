@@ -12,6 +12,8 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizePage("/Admin/Orders", Permissions.Orders);
     options.Conventions.AuthorizePage("/Admin/OrderEdit", Permissions.Orders);
     options.Conventions.AuthorizePage("/Admin/Roles", Permissions.Roles);
+    options.Conventions.AuthorizePage("/Admin/Accounts", Permissions.Roles);
+    options.Conventions.AuthorizePage("/Admin/AccountEdit", Permissions.Roles);
     options.Conventions.AuthorizePage("/Checkout");
     options.Conventions.AuthorizePage("/MyOrders");
 }).AddMvcOptions(options => options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
@@ -22,4 +24,5 @@ await app.InitializeLabAsync();
 if (!app.Environment.IsDevelopment()) { app.UseExceptionHandler("/Error"); app.UseHsts(); }
 app.UseHttpsRedirection(); app.UseStatusCodePagesWithReExecute("/NotFound"); app.UseRouting(); app.UseSession(); app.UseAuthentication(); app.UseAuthorization();
 app.MapStaticAssets(); app.MapRazorPages(); app.MapProductImages(); app.Run();
+
 
