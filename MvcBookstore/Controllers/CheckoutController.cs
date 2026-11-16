@@ -20,6 +20,7 @@ public class CheckoutController(AppDbContext db, UserManager<ApplicationUser> us
     [HttpGet("/Checkout")]
     public async Task<IActionResult> Index()
     {
+        // Lấy thông tin người dùng hiện tại
         var user = await users.GetUserAsync(User);
         if (user?.CustomerId is not int id)
             return Forbid();
@@ -34,6 +35,7 @@ public class CheckoutController(AppDbContext db, UserManager<ApplicationUser> us
         var user = await users.GetUserAsync(User);
         if (user?.CustomerId is not int customerId || user.IsDisabled)
             return Forbid();
+        // Kiểm tra xem đã có đơn hàng với token này chưa 
         var previous = await db.Orders.FirstOrDefaultAsync(x => x.CheckoutToken == input.Token && x.CustomerId == customerId);
         if (previous is not null)
             return Redirect("/MyOrders?id=" + previous.Id);

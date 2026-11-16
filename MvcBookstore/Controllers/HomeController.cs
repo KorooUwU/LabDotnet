@@ -15,7 +15,12 @@ public class HomeController(AppDbContext db) : Controller
             q = q.Where(x => x.Name.Contains(search) || x.Author.Contains(search) || x.Isbn.Contains(search));
         if (!string.IsNullOrWhiteSpace(category))
             q = q.Where(x => x.Category == category);
-        return View(new HomeModel { Search = search, Category = category, Books = await q.ToListAsync(), Categories = await db.Categories.AsNoTracking().ToListAsync() });
+        return View(new HomeModel { 
+            Search = search, 
+            Category = category, 
+            Books = await q.ToListAsync(), 
+            Categories = await db.Categories.AsNoTracking().ToListAsync() 
+            });
     }
 
     [HttpGet("/Books/{id:int}")]

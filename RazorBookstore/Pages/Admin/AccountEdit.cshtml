@@ -1,8 +1,13 @@
-﻿@page
+@page
 @model WebApplication1.Pages.Admin.AccountEditModel
-@{ ViewData["Title"] = "Chỉnh sửa tài khoản"; }
+@{
+    ViewData["Title"] = "Chỉnh sửa tài khoản";
+}
 <section class="admin-page">
-    <div class="page-heading"><h1>Chỉnh sửa tài khoản</h1><a href="/Admin/Accounts" class="btn btn-outline-dark">Về danh sách tài khoản</a></div>
+    <div class="page-heading">
+        <h1>Chỉnh sửa tài khoản</h1>
+        <a href="/Admin/Accounts" class="btn btn-outline-dark">Về danh sách tài khoản</a>
+    </div>
     <p><strong>@Model.Account.UserName</strong> — @Model.Account.FullName · @Model.Account.Email</p>
     <partial name="_Message" />
     <div asp-validation-summary="All" class="text-danger" role="alert"></div>
@@ -11,7 +16,8 @@
             <h2>Quyền truy cập</h2>
             <input asp-for="RoleInput.UserId" type="hidden" />
             <p>Chọn vai trò cho tài khoản. Quyền của từng vai trò được liệt kê bên dưới.</p>
-            @foreach (var role in Model.AvailableRoles) {
+            @foreach (var role in Model.AvailableRoles)
+            {
                 <label class="account-role-option">
                     <input type="checkbox" name="RoleInput.SelectedRoles" value="@role.Name" checked="@Model.RoleInput.SelectedRoles.Contains(role.Name!)" />
                     <span><strong>@role.Name</strong><small>@(Model.RolePermissions.GetValueOrDefault(role.Id, []).Length == 0 ? "Mua sách và xem đơn hàng của mình." : string.Join(" · ", Model.RolePermissions[role.Id]))</small></span>
@@ -25,10 +31,17 @@
             <h2>Đặt lại mật khẩu</h2>
             <input asp-for="PasswordInput.UserId" type="hidden" />
             <p>Nhập mật khẩu mới từ 6 đến 200 ký tự. Tài khoản cần đăng nhập lại sau khi đổi.</p>
-            <div><label asp-for="PasswordInput.NewPassword">Mật khẩu mới</label><input asp-for="PasswordInput.NewPassword" class="form-control" autocomplete="new-password" minlength="6" maxlength="200" /><span asp-validation-for="PasswordInput.NewPassword" class="text-danger"></span></div>
-            <div><label asp-for="PasswordInput.ConfirmPassword">Nhập lại mật khẩu mới</label><input asp-for="PasswordInput.ConfirmPassword" class="form-control" autocomplete="new-password" minlength="6" maxlength="200" /><span asp-validation-for="PasswordInput.ConfirmPassword" class="text-danger"></span></div>
+            <div>
+                <label asp-for="PasswordInput.NewPassword">Mật khẩu mới</label>
+                <input asp-for="PasswordInput.NewPassword" class="form-control" autocomplete="new-password" minlength="6" maxlength="200" />
+                <span asp-validation-for="PasswordInput.NewPassword" class="text-danger"></span>
+            </div>
+            <div>
+                <label asp-for="PasswordInput.ConfirmPassword">Nhập lại mật khẩu mới</label>
+                <input asp-for="PasswordInput.ConfirmPassword" class="form-control" autocomplete="new-password" minlength="6" maxlength="200" />
+                <span asp-validation-for="PasswordInput.ConfirmPassword" class="text-danger"></span>
+            </div>
             <button class="btn btn-dark">Đặt lại mật khẩu</button>
         </form>
     </div>
 </section>
-
